@@ -1,0 +1,121 @@
+# GuinéaManager ERP - Docker Compose Production Configuration
+# Complete ERP solution for West African SMEs
+
+services:
+  # ==========================================
+  # MAIN APPLICATION (All-in-One)
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: guineamanager
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      # Core
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+      - JWT_SECRET=${JWT_SECRET:-guineamanager-change-this-secret-in-production}
+      - NEXT_PUBLIC_API_URL=/api
+      - BACKEND_URL=http://localhost:3001
+      
+      # Application URL (change for your domain)
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      
+      # Email (optional - for notifications)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      
+      # Mobile Money - Orange Money (optional)
+      - ORANGE_MONEY_CLIENT_ID=${ORANGE_MONEY_CLIENT_ID:-}
+      - ORANGE_MONEY_CLIENT_SECRET=${ORANGE_MONEY_CLIENT_SECRET:-}
+      
+      # Mobile Money - MTN Money (optional)
+      - MTN_MONEY_SUBSCRIPTION_KEY=${MTN_MONEY_SUBSCRIPTION_KEY:-}
+      - MTN_MONEY_API_KEY=${MTN_MONEY_API_KEY:-}
+      
+      # Push notifications (optional)
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      
+      # Redis (optional - for caching)
+      - REDIS_URL=${REDIS_URL:-}
+      
+    volumes:
+      # Persist database
+      - guineamanager-data:/app/data
+      # Persist uploads
+      - guineamanager-uploads:/app/uploads
+      
+    networks:
+      - guineamanager-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================
+  # OPTIONAL: Caddy Reverse Proxy (SSL)
+  # Uncomment to enable HTTPS with auto SSL
+  # ==========================================
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: guineamanager-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy-data:/data
+  #     - caddy-config:/config
+  #   networks:
+  #     - guineamanager-network
+  #   depends_on:
+  #     app:
+  #       condition: service_healthy
+
+  # ==========================================
+  # OPTIONAL: Redis Cache
+  # Uncomment for better performance
+  # ==========================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: guineamanager-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - guineamanager-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  guineamanager-network:
+    driver: bridge
+
+volumes:
+  guineamanager-data:
+    name: guineamanager-data
+  guineamanager-uploads:
+    name: guineamanager-uploads
+  # caddy-data:
+  # caddy-config:
+  # redis-data:

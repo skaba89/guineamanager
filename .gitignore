@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.pnp
+*.tsbuildinfo
+next-env.d.ts
+
+# Build outputs
+dist/
+backend/dist/
+.next/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database
+*.db
+*.db-journal
+db/
+data/
+
+# Lock files
+bun.lock
+package-lock.json
+yarn.lock
+
+# Logs
+dev.log
+*.log
+
+# Environment
+.env
+.env.local
+.env*.local
+.accesslog
+.config

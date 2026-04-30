@@ -1,0 +1,7 @@
+{
+  "name": "backend-api",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cd /home/z/my-project/backend && node --require ts-node/register src/index.ts"
+  }
+}

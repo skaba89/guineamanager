@@ -1,0 +1,7 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun --hot ../../backend/node_modules/.bin/ts-node-dev --respawn --transpile-only ../../backend/src/index.ts"
+  }
+}
