@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastProvider } from '@/components/ui/toast-provider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
@@ -25,6 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="light"
         enableSystem
         disableTransitionOnChange
+        suppressHydrationWarning
       >
         <ToastProvider>
           {children}
