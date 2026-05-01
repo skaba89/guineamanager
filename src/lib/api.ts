@@ -1,39 +1,14 @@
 // API Client for GuinéaManager Backend
-// This file provides the interface between the frontend and the backend API
-
-// Use absolute URL for better compatibility in preview environments
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    // In browser, use the current origin for API calls
-    return `${window.location.origin}/api`;
-  }
-  return process.env.NEXT_PUBLIC_API_URL || '/api';
-};
-
-const API_BASE_URL = typeof window !== 'undefined' 
-  ? `${window.location.origin}/api`
-  : '/api';
+// Uses relative URLs for maximum compatibility with preview environments
 
 interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
   errors?: any[];
-  pagination?: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
 }
 
 class ApiClient {
-  private baseUrl: string;
-
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
-
   private getToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('guineamanager-token');
@@ -65,7 +40,6 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
       ...options.headers,
     };
 
@@ -74,17 +48,23 @@ class ApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    // Use absolute URL
-    const url = typeof window !== 'undefined'
-      ? `${window.location.origin}/api${endpoint}`
-      : `${this.baseUrl}${endpoint}`;
+    // Always use relative URL - this works in all environments
+    const url = `/api${endpoint}`;
 
     try {
       const response = await fetch(url, {
         ...options,
         headers,
-        credentials: 'include',
       });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        return {
+          success: false,
+          message: 'Erreur de connexion au serveur',
+        };
+      }
 
       const data = await response.json();
 
@@ -101,14 +81,9 @@ class ApiClient {
       console.error('API Error:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Erreur de connexion au serveur',
+        message: 'Erreur de connexion au serveur',
       };
     }
-  }
-
-  // ============ HEALTH ============
-  async healthCheck() {
-    return this.request<{ status: string; timestamp: string }>('/health');
   }
 
   // ============ AUTH ============
@@ -142,28 +117,26 @@ class ApiClient {
     return this.request<{ id: string; email: string; nom: string; prenom: string; role: string; company: any }>('/auth/me');
   }
 
+  // ============ HEALTH ============
+  async healthCheck() {
+    return this.request<{ status: string; timestamp: string }>('/health');
+  }
+
   // ============ CLIENTS ============
   async getClients(params?: { search?: string; page?: number; limit?: number }) {
     const query = new URLSearchParams();
     if (params?.search) query.set('search', params.search);
     if (params?.page) query.set('page', params.page.toString());
     if (params?.limit) query.set('limit', params.limit.toString());
-
     return this.request<any[]>(`/clients?${query.toString()}`);
   }
 
   async createClient(data: any) {
-    return this.request<any>('/clients', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/clients', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateClient(id: string, data: any) {
-    return this.request<any>(`/clients/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteClient(id: string) {
@@ -177,22 +150,15 @@ class ApiClient {
     if (params?.categorie) query.set('categorie', params.categorie);
     if (params?.page) query.set('page', params.page.toString());
     if (params?.limit) query.set('limit', params.limit.toString());
-
     return this.request<any[]>(`/produits?${query.toString()}`);
   }
 
   async createProduit(data: any) {
-    return this.request<any>('/produits', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/produits', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateProduit(id: string, data: any) {
-    return this.request<any>(`/produits/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>(`/produits/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteProduit(id: string) {
@@ -206,51 +172,19 @@ class ApiClient {
     if (params?.clientId) query.set('clientId', params.clientId);
     if (params?.page) query.set('page', params.page.toString());
     if (params?.limit) query.set('limit', params.limit.toString());
-
     return this.request<any[]>(`/factures?${query.toString()}`);
   }
 
   async createFacture(data: any) {
-    return this.request<any>('/factures', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/factures', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateFactureStatut(id: string, statut: string) {
-    return this.request<any>(`/factures/${id}/statut`, {
-      method: 'PUT',
-      body: JSON.stringify({ statut }),
-    });
+    return this.request<any>(`/factures/${id}/statut`, { method: 'PUT', body: JSON.stringify({ statut }) });
   }
 
   async deleteFacture(id: string) {
     return this.request(`/factures/${id}`, { method: 'DELETE' });
-  }
-
-  async getFacturePDF(id: string) {
-    const token = this.getToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    try {
-      const url = typeof window !== 'undefined'
-        ? `${window.location.origin}/api/factures/${id}/pdf`
-        : `${this.baseUrl}/factures/${id}/pdf`;
-
-      const response = await fetch(url, { headers });
-
-      if (!response.ok) {
-        return { success: false, message: 'Erreur lors de la génération du PDF' };
-      }
-
-      const blob = await response.blob();
-      return { success: true, data: blob };
-    } catch (error) {
-      return { success: false, message: 'Erreur de connexion au serveur' };
-    }
   }
 
   // ============ EMPLOYES ============
@@ -260,22 +194,15 @@ class ApiClient {
     if (params?.search) query.set('search', params.search);
     if (params?.page) query.set('page', params.page.toString());
     if (params?.limit) query.set('limit', params.limit.toString());
-
     return this.request<any[]>(`/employes?${query.toString()}`);
   }
 
   async createEmploye(data: any) {
-    return this.request<any>('/employes', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/employes', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateEmploye(id: string, data: any) {
-    return this.request<any>(`/employes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>(`/employes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteEmploye(id: string) {
@@ -288,22 +215,15 @@ class ApiClient {
     if (params?.mois) query.set('mois', params.mois.toString());
     if (params?.annee) query.set('annee', params.annee.toString());
     if (params?.employeId) query.set('employeId', params.employeId);
-
     return this.request<any[]>(`/paie/bulletins?${query.toString()}`);
   }
 
   async calculerPaie(data: any) {
-    return this.request<any>('/paie/calculer', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/paie/calculer', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async createBulletin(data: any) {
-    return this.request<any>('/paie/bulletins', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/paie/bulletins', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async validerBulletin(id: string) {
@@ -321,22 +241,15 @@ class ApiClient {
     if (params?.mois) query.set('mois', params.mois);
     if (params?.page) query.set('page', params.page.toString());
     if (params?.limit) query.set('limit', params.limit.toString());
-
     return this.request<any[]>(`/depenses?${query.toString()}`);
   }
 
   async createDepense(data: any) {
-    return this.request<any>('/depenses', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/depenses', { method: 'POST', body: JSON.stringify(data) });
   }
 
   async updateDepense(id: string, data: any) {
-    return this.request<any>(`/depenses/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>(`/depenses/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async deleteDepense(id: string) {
@@ -362,10 +275,7 @@ class ApiClient {
   }
 
   async updateSociete(data: any) {
-    return this.request<any>('/parametres/societe', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/parametres/societe', { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async getProfil() {
@@ -373,10 +283,7 @@ class ApiClient {
   }
 
   async updateProfil(data: any) {
-    return this.request<any>('/parametres/profil', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return this.request<any>('/parametres/profil', { method: 'PUT', body: JSON.stringify(data) });
   }
 
   async changePassword(ancienPassword: string, nouveauPassword: string) {
@@ -387,5 +294,5 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(API_BASE_URL);
+export const api = new ApiClient();
 export default api;
