@@ -79,7 +79,7 @@ export const useAppStore = create<AppState>()(
       // Auth
       user: null,
       isAuthenticated: false,
-      isLoading: true,
+      isLoading: false,
       error: null,
       apiConnected: false,
 
@@ -161,6 +161,17 @@ export const useAppStore = create<AppState>()(
 
       checkAuth: async () => {
         try {
+          // Check if token exists first
+          const token = api.getToken();
+          if (!token) {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+            return;
+          }
+
           const response = await api.getMe();
           if (response.success && response.data) {
             set({
@@ -176,7 +187,8 @@ export const useAppStore = create<AppState>()(
               isLoading: false,
             });
           }
-        } catch {
+        } catch (error) {
+          console.error('checkAuth error:', error);
           set({ isLoading: false, isAuthenticated: false });
         }
       },

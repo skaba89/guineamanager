@@ -62,16 +62,17 @@ const pageConfig: Record<string, { title: string; subtitle?: string }> = {
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const { isAuthenticated, login, register, checkAuth } = useAppStore();
 
-  // Check authentication on mount
+  // Check authentication on mount - only once
   useEffect(() => {
-    const check = async () => {
-      await checkAuth();
-      setIsCheckingAuth(false);
-    };
-    check();
+    // Check if we have a token before making API call
+    const token = localStorage.getItem('guineamanager-token');
+    if (token) {
+      setIsCheckingAuth(true);
+      checkAuth().finally(() => setIsCheckingAuth(false));
+    }
   }, [checkAuth]);
 
   const handleLogin = async (email: string, password: string) => {
