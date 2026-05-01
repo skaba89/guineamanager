@@ -24,6 +24,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 interface Exercice {
   id: string;
@@ -111,7 +113,7 @@ function ComptabilitePageComponent() {
         loadExerciceData(actif.id);
       }
     } catch (error) {
-      console.error('Erreur chargement données comptabilité:', error);
+      logger.error('Erreur chargement données comptabilité:', error);
     } finally {
       setLoading(false);
     }
@@ -130,7 +132,7 @@ function ComptabilitePageComponent() {
       setBilan(bilanRes.data);
       setCompteResultat(resultatRes.data);
     } catch (error) {
-      console.error('Erreur chargement données exercice:', error);
+      logger.error('Erreur chargement données exercice:', error);
     }
   };
 
@@ -160,7 +162,7 @@ function ComptabilitePageComponent() {
       setShowNewExercice(false);
       loadData();
     } catch (error) {
-      console.error('Erreur création exercice:', error);
+      logger.error('Erreur création exercice:', error);
     }
   };
 
@@ -172,7 +174,7 @@ function ComptabilitePageComponent() {
       await api.post(`/comptabilite/exercices/${exerciceActif.id}/cloturer`);
       loadData();
     } catch (error) {
-      console.error('Erreur clôture exercice:', error);
+      logger.error('Erreur clôture exercice:', error);
     }
   };
 

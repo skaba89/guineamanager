@@ -633,6 +633,588 @@ class ApiClient {
     if (params?.endDate) query.set('endDate', params.endDate);
     return this.request<any[]>(`/stock/history?${query.toString()}`);
   }
+
+  // ============ GENERIC HTTP METHODS ============
+  async get<T = any>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<ApiResponse<T>> {
+    let url = endpoint;
+    if (params) {
+      const query = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          query.set(key, String(value));
+        }
+      });
+      const queryString = query.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+    return this.request<T>(url, { method: 'GET' });
+  }
+
+  async post<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async put<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async patch<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  // ============ COMMANDES FOURNISSEUR ============
+  async getCommandesFournisseur(params?: { statut?: string; fournisseurId?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.fournisseurId) query.set('fournisseurId', params.fournisseurId);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/fournisseurs/commandes/all?${query.toString()}`);
+  }
+
+  async getCommandeFournisseur(id: string) {
+    return this.request<any>(`/fournisseurs/commandes/${id}`);
+  }
+
+  async createCommandeFournisseur(data: any) {
+    return this.request<any>('/fournisseurs/commandes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCommandeFournisseurStatus(id: string, statut: string) {
+    return this.request<any>(`/fournisseurs/commandes/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ statut }),
+    });
+  }
+
+  async cancelCommandeFournisseur(id: string, raison?: string) {
+    return this.request<any>(`/fournisseurs/commandes/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ raison }),
+    });
+  }
+
+  async receptionnerCommandeFournisseur(id: string, data: { lignes: { produitId: string; quantiteRecue: number }[] }) {
+    return this.request<any>(`/fournisseurs/commandes/${id}/reception`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============ TRANSFERTS STOCK ============
+  async getTransferts(params?: { statut?: string; entrepotSourceId?: string; entrepotDestinationId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.entrepotSourceId) query.set('entrepotSourceId', params.entrepotSourceId);
+    if (params?.entrepotDestinationId) query.set('entrepotDestinationId', params.entrepotDestinationId);
+    return this.request<any[]>(`/entrepots/transferts/history?${query.toString()}`);
+  }
+
+  async createTransfert(data: {
+    entrepotSourceId: string;
+    entrepotDestinationId: string;
+    lignes: { produitId: string; quantite: number }[];
+    notes?: string;
+  }) {
+    return this.request<any>('/entrepots/transferts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async validerTransfert(id: string) {
+    return this.request<any>(`/entrepots/transferts/${id}/valider`, { method: 'PUT' });
+  }
+
+  async annulerTransfert(id: string) {
+    return this.request<any>(`/entrepots/transferts/${id}/annuler`, { method: 'PUT' });
+  }
+
+  // ============ DEVIS ============
+  async getDevis(params?: { statut?: string; clientId?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.clientId) query.set('clientId', params.clientId);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/devis?${query.toString()}`);
+  }
+
+  async getDevisStats() {
+    return this.request<any>('/devis/stats');
+  }
+
+  async getDevis(id: string) {
+    return this.request<any>(`/devis/${id}`);
+  }
+
+  async createDevis(data: any) {
+    return this.request<any>('/devis', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateDevisStatus(id: string, statut: string) {
+    return this.request<any>(`/devis/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ statut }),
+    });
+  }
+
+  async convertirDevisEnFacture(id: string) {
+    return this.request<any>(`/devis/${id}/convert`, { method: 'POST' });
+  }
+
+  async envoyerDevis(id: string, email?: string) {
+    return this.request<any>(`/devis/${id}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async getDevisPdf(id: string) {
+    return this.request<any>(`/devis/${id}/pdf`);
+  }
+
+  // ============ COMMANDES CLIENT ============
+  async getCommandes(params?: { statut?: string; clientId?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.clientId) query.set('clientId', params.clientId);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/commandes?${query.toString()}`);
+  }
+
+  async getCommandeStats() {
+    return this.request<any>('/commandes/stats');
+  }
+
+  async getCommande(id: string) {
+    return this.request<any>(`/commandes/${id}`);
+  }
+
+  async createCommande(data: any) {
+    return this.request<any>('/commandes', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateCommande(id: string, data: any) {
+    return this.request<any>(`/commandes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async updateCommandeStatus(id: string, statut: string) {
+    return this.request<any>(`/commandes/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ statut }),
+    });
+  }
+
+  async cancelCommande(id: string, raison?: string) {
+    return this.request<any>(`/commandes/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ raison }),
+    });
+  }
+
+  async creerFactureDepuisCommande(id: string) {
+    return this.request<any>(`/commandes/${id}/facture`, { method: 'POST' });
+  }
+
+  async creerBonLivraison(id: string, data: any) {
+    return this.request<any>(`/commandes/${id}/livraison`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============ COMPTABILITE ============
+  async getExercicesComptables() {
+    return this.request<any[]>('/comptabilite/exercices');
+  }
+
+  async getExerciceComptable(id: string) {
+    return this.request<any>(`/comptabilite/exercices/${id}`);
+  }
+
+  async creerExerciceComptable(data: any) {
+    return this.request<any>('/comptabilite/exercices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cloturerExercice(id: string) {
+    return this.request<any>(`/comptabilite/exercices/${id}/cloturer`, { method: 'POST' });
+  }
+
+  async getPlanComptable() {
+    return this.request<any[]>('/comptabilite/plan-comptable');
+  }
+
+  async getJournaux() {
+    return this.request<any[]>('/comptabilite/journaux');
+  }
+
+  async getEcritures(params?: { exerciceId?: string; journalId?: string; compte?: string }) {
+    const query = new URLSearchParams();
+    if (params?.exerciceId) query.set('exerciceId', params.exerciceId);
+    if (params?.journalId) query.set('journalId', params.journalId);
+    if (params?.compte) query.set('compte', params.compte);
+    return this.request<any[]>(`/comptabilite/ecritures?${query.toString()}`);
+  }
+
+  async creerEcriture(data: any) {
+    return this.request<any>('/comptabilite/ecritures', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGrandLivre(params?: { exerciceId?: string; compte?: string }) {
+    const query = new URLSearchParams();
+    if (params?.exerciceId) query.set('exerciceId', params.exerciceId);
+    if (params?.compte) query.set('compte', params.compte);
+    return this.request<any>(`/comptabilite/grand-livre?${query.toString()}`);
+  }
+
+  async getBalance(params?: { exerciceId?: string; date?: string }) {
+    const query = new URLSearchParams();
+    if (params?.exerciceId) query.set('exerciceId', params.exerciceId);
+    if (params?.date) query.set('date', params.date);
+    return this.request<any>(`/comptabilite/balance?${query.toString()}`);
+  }
+
+  async getBilan(exerciceId?: string) {
+    const query = exerciceId ? `?exerciceId=${exerciceId}` : '';
+    return this.request<any>(`/comptabilite/bilan${query}`);
+  }
+
+  async getCompteResultat(exerciceId?: string) {
+    const query = exerciceId ? `?exerciceId=${exerciceId}` : '';
+    return this.request<any>(`/comptabilite/compte-resultat${query}`);
+  }
+
+  async initialiserComptabilite() {
+    return this.request<any>('/comptabilite/initialiser', { method: 'POST' });
+  }
+
+  // ============ DEVISES ============
+  async getDevises() {
+    return this.request<any[]>('/devises');
+  }
+
+  async getDevise(code: string) {
+    return this.request<any>(`/devises/${code}`);
+  }
+
+  async getTauxChange(source: string, cible: string) {
+    return this.request<any>(`/devises/taux/${source}/${cible}`);
+  }
+
+  async getTauxActuels(base?: string) {
+    const query = base ? `?base=${base}` : '';
+    return this.request<any>(`/devises/taux-actuels${query}`);
+  }
+
+  async convertirDevise(data: { montant: number; source: string; cible: string }) {
+    return this.request<any>('/devises/convertir', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createTauxChange(data: { sourceCode: string; cibleCode: string; taux: number; dateEffet?: string }) {
+    return this.request<any>('/devises/taux', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTauxFromApi() {
+    return this.request<any>('/devises/taux/update-api', { method: 'POST' });
+  }
+
+  async getConversionsDevise() {
+    return this.request<any[]>('/devises/conversions');
+  }
+
+  // ============ CRM ============
+  async getProspects(params?: { statut?: string; search?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.search) query.set('search', params.search);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/crm/prospects?${query.toString()}`);
+  }
+
+  async getProspect(id: string) {
+    return this.request<any>(`/crm/prospects/${id}`);
+  }
+
+  async createProspect(data: any) {
+    return this.request<any>('/crm/prospects', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateProspect(id: string, data: any) {
+    return this.request<any>(`/crm/prospects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async updateProspectStatut(id: string, statut: string) {
+    return this.request<any>(`/crm/prospects/${id}/statut`, {
+      method: 'PATCH',
+      body: JSON.stringify({ statut }),
+    });
+  }
+
+  async calculerScoreProspect(id: string) {
+    return this.request<any>(`/crm/prospects/${id}/score`, { method: 'POST' });
+  }
+
+  async convertirProspectEnClient(id: string) {
+    return this.request<any>(`/crm/prospects/${id}/convertir`, { method: 'POST' });
+  }
+
+  async deleteProspect(id: string) {
+    return this.request<any>(`/crm/prospects/${id}`, { method: 'DELETE' });
+  }
+
+  async getOpportunites(params?: { etape?: string; prospectId?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.etape) query.set('etape', params.etape);
+    if (params?.prospectId) query.set('prospectId', params.prospectId);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/crm/opportunites?${query.toString()}`);
+  }
+
+  async getOpportunite(id: string) {
+    return this.request<any>(`/crm/opportunites/${id}`);
+  }
+
+  async createOpportunite(data: any) {
+    return this.request<any>('/crm/opportunites', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateOpportunite(id: string, data: any) {
+    return this.request<any>(`/crm/opportunites/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async updateOpportuniteEtape(id: string, etape: string) {
+    return this.request<any>(`/crm/opportunites/${id}/etape`, {
+      method: 'PATCH',
+      body: JSON.stringify({ etape }),
+    });
+  }
+
+  async gagnerOpportunite(id: string, data?: { montantFinal?: number; notes?: string }) {
+    return this.request<any>(`/crm/opportunites/${id}/gagner`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async perdreOpportunite(id: string, raison?: string) {
+    return this.request<any>(`/crm/opportunites/${id}/perdre`, {
+      method: 'POST',
+      body: JSON.stringify({ raison }),
+    });
+  }
+
+  async deleteOpportunite(id: string) {
+    return this.request<any>(`/crm/opportunites/${id}`, { method: 'DELETE' });
+  }
+
+  async getActivitesCRM(params?: { type?: string; opportuniteId?: string; prospectId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.type) query.set('type', params.type);
+    if (params?.opportuniteId) query.set('opportuniteId', params.opportuniteId);
+    if (params?.prospectId) query.set('prospectId', params.prospectId);
+    return this.request<any[]>(`/crm/activites?${query.toString()}`);
+  }
+
+  async getActiviteCRM(id: string) {
+    return this.request<any>(`/crm/activites/${id}`);
+  }
+
+  async createActiviteCRM(data: any) {
+    return this.request<any>('/crm/activites', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateActiviteCRM(id: string, data: any) {
+    return this.request<any>(`/crm/activites/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async terminerActiviteCRM(id: string) {
+    return this.request<any>(`/crm/activites/${id}/terminer`, { method: 'POST' });
+  }
+
+  async deleteActiviteCRM(id: string) {
+    return this.request<any>(`/crm/activites/${id}`, { method: 'DELETE' });
+  }
+
+  async getCRMDashboard() {
+    return this.request<any>('/crm/dashboard');
+  }
+
+  async getPipelineStats() {
+    return this.request<any>('/crm/pipeline/stats');
+  }
+
+  async getPipelines() {
+    return this.request<any[]>('/crm/pipelines');
+  }
+
+  // ============ SUPPORT ============
+  async getTickets(params?: { statut?: string; categorie?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.categorie) query.set('categorie', params.categorie);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request<any[]>(`/support/tickets?${query.toString()}`);
+  }
+
+  async getTicket(id: string) {
+    return this.request<any>(`/support/tickets/${id}`);
+  }
+
+  async createTicket(data: { sujet: string; description: string; categorie: string; priorite?: string }) {
+    return this.request<any>('/support/tickets', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async repondreTicket(id: string, message: string) {
+    return this.request<any>(`/support/tickets/${id}/reponses`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  }
+
+  async fermerTicket(id: string) {
+    return this.request<any>(`/support/tickets/${id}/close`, { method: 'PUT' });
+  }
+
+  async noterTicket(id: string, note: number, commentaire?: string) {
+    return this.request<any>(`/support/tickets/${id}/satisfaction`, {
+      method: 'POST',
+      body: JSON.stringify({ note, commentaire }),
+    });
+  }
+
+  async getSupportStats() {
+    return this.request<any>('/support/stats');
+  }
+
+  async getFAQ() {
+    return this.request<any[]>('/support/faq');
+  }
+
+  async getCategoriesSupport() {
+    return this.request<any[]>('/support/categories');
+  }
+
+  // ============ INVENTAIRES ============
+  async getInventaires(params?: { statut?: string; entrepotId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.statut) query.set('statut', params.statut);
+    if (params?.entrepotId) query.set('entrepotId', params.entrepotId);
+    return this.request<any[]>(`/inventaires?${query.toString()}`);
+  }
+
+  async getInventaire(id: string) {
+    return this.request<any>(`/inventaires/${id}`);
+  }
+
+  async createInventaire(data: { entrepotId: string; notes?: string }) {
+    return this.request<any>('/inventaires', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updateLigneInventaire(inventaireId: string, ligneId: string, data: { quantiteComptee: number; notes?: string }) {
+    return this.request<any>(`/inventaires/${inventaireId}/ligne/${ligneId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async finaliserInventaire(id: string) {
+    return this.request<any>(`/inventaires/${id}/finalize`, { method: 'PUT' });
+  }
+
+  async annulerInventaire(id: string) {
+    return this.request<any>(`/inventaires/${id}/cancel`, { method: 'PUT' });
+  }
+
+  // ============ RAPPORTS ============
+  async getCAMensuel(annee?: number) {
+    const query = annee ? `?annee=${annee}` : '';
+    return this.request<any>(`/rapports/ca-mensuel${query}`);
+  }
+
+  async getTopClients(limit?: number) {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request<any[]>(`/rapports/top-clients${query}`);
+  }
+
+  async getBilanSimplifie() {
+    return this.request<any>('/rapports/bilan-simplifie');
+  }
+
+  async getImpayes() {
+    return this.request<any[]>('/rapports/impayes');
+  }
+
+  async exportRapport(type: string, format?: string) {
+    const query = format ? `?format=${format}` : '';
+    return this.request<any>(`/rapports/export${query}`);
+  }
+
+  // ============ EXPORTS ============
+  async exportClients(format: string = 'xlsx') {
+    return this.request<any>(`/exports/clients?format=${format}`);
+  }
+
+  async exportFactures(params?: { startDate?: string; endDate?: string; format?: string }) {
+    const query = new URLSearchParams();
+    if (params?.startDate) query.set('startDate', params.startDate);
+    if (params?.endDate) query.set('endDate', params.endDate);
+    if (params?.format) query.set('format', params.format);
+    return this.request<any>(`/exports/factures?${query.toString()}`);
+  }
+
+  async exportEmployes(format: string = 'xlsx') {
+    return this.request<any>(`/exports/employes?format=${format}`);
+  }
+
+  async exportPaie(params?: { mois?: number; annee?: number; format?: string }) {
+    const query = new URLSearchParams();
+    if (params?.mois) query.set('mois', params.mois.toString());
+    if (params?.annee) query.set('annee', params.annee.toString());
+    if (params?.format) query.set('format', params.format);
+    return this.request<any>(`/exports/paie?${query.toString()}`);
+  }
+
+  async exportDepenses(params?: { mois?: string; format?: string }) {
+    const query = new URLSearchParams();
+    if (params?.mois) query.set('mois', params.mois);
+    if (params?.format) query.set('format', params.format);
+    return this.request<any>(`/exports/depenses?${query.toString()}`);
+  }
 }
 
 export const api = new ApiClient();

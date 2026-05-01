@@ -218,12 +218,19 @@ export function calculerPaieComplete(params: {
   acomptes?: number;
   autresRetenues?: number;
 }): {
+  salaireBase: number;
   brutTotal: number;
   cnssEmploye: number;
   cnssEmployeur: number;
   ipr: number;
+  autresRetenues: number;
+  acomptes: number;
   netAPayer: number;
   coutTotalEmployeur: number;
+  montHeuresSupp: number;
+  primes: number;
+  indemnites: number;
+  autresAvantages: number;
 } {
   const {
     salaireBase,
@@ -237,10 +244,10 @@ export function calculerPaieComplete(params: {
   } = params;
 
   // Calcul du montant des heures supplémentaires
-  const montantHeuresSupp = heuresSupplementaires * tauxHoraire;
+  const montHeuresSupp = heuresSupplementaires * tauxHoraire;
 
   // Calcul du brut total (somme de tous les gains)
-  const brutTotal = salaireBase + montantHeuresSupp + primes + indemnites + autresAvantages;
+  const brutTotal = salaireBase + montHeuresSupp + primes + indemnites + autresAvantages;
 
   // Calcul des cotisations CNSS
   const cnss = calculerCNSS(brutTotal);
@@ -258,12 +265,19 @@ export function calculerPaieComplete(params: {
   const coutTotalEmployeur = brutTotal + cnss.employeur;
 
   return {
+    salaireBase,
     brutTotal,
     cnssEmploye: cnss.employe,
     cnssEmployeur: cnss.employeur,
     ipr,
+    autresRetenues,
+    acomptes,
     netAPayer,
-    coutTotalEmployeur
+    coutTotalEmployeur,
+    montHeuresSupp,
+    primes,
+    indemnites,
+    autresAvantages
   };
 }
 

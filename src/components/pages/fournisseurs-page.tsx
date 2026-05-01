@@ -45,6 +45,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 import { useAppStore } from '@/stores/auth-store';
 
 interface Fournisseur {
@@ -192,7 +194,7 @@ export function FournisseursPage() {
 
       await Promise.all(promises);
     } catch (error) {
-      console.error('Erreur chargement:', error);
+      logger.error('Erreur chargement:', error);
     } finally {
       setLoading(false);
     }
@@ -213,7 +215,7 @@ export function FournisseursPage() {
         alert(response.message || 'Erreur lors de l\'enregistrement');
       }
     } catch (error) {
-      console.error('Erreur création fournisseur:', error);
+      logger.error('Erreur création fournisseur:', error);
     }
   };
 
@@ -226,7 +228,7 @@ export function FournisseursPage() {
         loadData();
       }
     } catch (error) {
-      console.error('Erreur suppression:', error);
+      logger.error('Erreur suppression:', error);
     }
   };
 
@@ -250,7 +252,7 @@ export function FournisseursPage() {
         alert(response.message || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur création commande:', error);
+      logger.error('Erreur création commande:', error);
     }
   };
 
@@ -261,7 +263,7 @@ export function FournisseursPage() {
         loadData();
       }
     } catch (error) {
-      console.error('Erreur mise à jour:', error);
+      logger.error('Erreur mise à jour:', error);
     }
   };
 
@@ -274,7 +276,7 @@ export function FournisseursPage() {
         loadData();
       }
     } catch (error) {
-      console.error('Erreur annulation:', error);
+      logger.error('Erreur annulation:', error);
     }
   };
 

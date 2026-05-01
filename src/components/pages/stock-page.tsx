@@ -46,6 +46,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 import { useAppStore } from '@/stores/auth-store';
 
 interface StockAlert {
@@ -185,7 +187,7 @@ export function StockPage() {
 
       await Promise.all(promises);
     } catch (error) {
-      console.error('Erreur chargement:', error);
+      logger.error('Erreur chargement:', error);
     } finally {
       setLoading(false);
     }
@@ -213,7 +215,7 @@ export function StockPage() {
         alert(response.message || 'Erreur lors de l\'enregistrement');
       }
     } catch (error) {
-      console.error('Erreur mouvement:', error);
+      logger.error('Erreur mouvement:', error);
     }
   };
 
@@ -236,7 +238,7 @@ export function StockPage() {
         alert(response.message || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur création entrepôt:', error);
+      logger.error('Erreur création entrepôt:', error);
     }
   };
 
@@ -263,7 +265,7 @@ export function StockPage() {
         alert(response.message || 'Erreur lors du transfert');
       }
     } catch (error) {
-      console.error('Erreur transfert:', error);
+      logger.error('Erreur transfert:', error);
     }
   };
 

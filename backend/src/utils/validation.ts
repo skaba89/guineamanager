@@ -96,6 +96,9 @@ export const createProduitSchema = z.object({
   stockActuel: z.number().int().nonnegative().default(0),
   stockMin: z.number().int().nonnegative().default(0),
   categorie: z.string().max(100).optional(),
+  type: z.enum(['PRODUIT', 'SERVICE']).default('PRODUIT'),
+  tva: z.number().nonnegative().max(100).default(18),
+  actif: z.boolean().default(true),
 });
 
 export const updateProduitSchema = createProduitSchema.partial().extend({

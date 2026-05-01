@@ -50,6 +50,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatGNF } from '@/lib/mock-data';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 interface Entrepot {
   id: string;
@@ -103,7 +105,7 @@ export function EntrepotsPage() {
         setEntrepots(response.data);
       }
     } catch (error) {
-      console.error('Error fetching entrepots:', error);
+      logger.error('Error fetching entrepots:', error);
     } finally {
       setLoading(false);
     }
@@ -135,7 +137,7 @@ export function EntrepotsPage() {
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Error saving entrepot:', error);
+      logger.error('Error saving entrepot:', error);
     }
   };
 
@@ -172,7 +174,7 @@ export function EntrepotsPage() {
         setIsStockDialogOpen(true);
       }
     } catch (error) {
-      console.error('Error fetching entrepot stock:', error);
+      logger.error('Error fetching entrepot stock:', error);
     }
   };
 
@@ -183,7 +185,7 @@ export function EntrepotsPage() {
         fetchEntrepots();
       }
     } catch (error) {
-      console.error('Error deleting entrepot:', error);
+      logger.error('Error deleting entrepot:', error);
     }
   };
 

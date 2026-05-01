@@ -25,6 +25,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppStore } from '@/stores/auth-store';
 import { formatGNF } from '@/lib/mock-data';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 // Liste des pays supportés
 const PAYS_LIST = [
@@ -197,7 +199,7 @@ export function SettingsPage() {
         setTwoFAStatus(response.data as any);
       }
     } catch (error) {
-      console.error('Erreur chargement 2FA:', error);
+      logger.error('Erreur chargement 2FA:', error);
     }
   };
 
@@ -208,7 +210,7 @@ export function SettingsPage() {
         setMobileMoneyConfig(response.data as any);
       }
     } catch (error) {
-      console.error('Erreur chargement Mobile Money config:', error);
+      logger.error('Erreur chargement Mobile Money config:', error);
     }
   };
 
@@ -221,7 +223,7 @@ export function SettingsPage() {
         setShow2FASetup(true);
       }
     } catch (error) {
-      console.error('Erreur init 2FA:', error);
+      logger.error('Erreur init 2FA:', error);
     } finally {
       setLoading(false);
     }
@@ -239,7 +241,7 @@ export function SettingsPage() {
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (error) {
-      console.error('Erreur verify 2FA:', error);
+      logger.error('Erreur verify 2FA:', error);
     } finally {
       setLoading(false);
     }
@@ -257,7 +259,7 @@ export function SettingsPage() {
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (error) {
-      console.error('Erreur disable 2FA:', error);
+      logger.error('Erreur disable 2FA:', error);
     } finally {
       setLoading(false);
     }
@@ -272,7 +274,7 @@ export function SettingsPage() {
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (error) {
-      console.error('Erreur sauvegarde Mobile Money:', error);
+      logger.error('Erreur sauvegarde Mobile Money:', error);
     } finally {
       setLoading(false);
     }
@@ -313,7 +315,7 @@ export function SettingsPage() {
         });
       }
     } catch (error) {
-      console.error('Erreur chargement société:', error);
+      logger.error('Erreur chargement société:', error);
     } finally {
       setLoading(false);
     }
@@ -326,7 +328,7 @@ export function SettingsPage() {
         setPlans(response.data as PlanData[]);
       }
     } catch (error) {
-      console.error('Erreur chargement plans:', error);
+      logger.error('Erreur chargement plans:', error);
     }
   };
 
@@ -337,7 +339,7 @@ export function SettingsPage() {
         setAbonnementInfo(response.data);
       }
     } catch (error) {
-      console.error('Erreur chargement abonnement:', error);
+      logger.error('Erreur chargement abonnement:', error);
     }
   };
 
@@ -364,7 +366,7 @@ export function SettingsPage() {
         }
       }
     } catch (error) {
-      console.error('Erreur sauvegarde:', error);
+      logger.error('Erreur sauvegarde:', error);
     } finally {
       setLoading(false);
     }
@@ -385,7 +387,7 @@ export function SettingsPage() {
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (error) {
-      console.error('Erreur sauvegarde fiscal:', error);
+      logger.error('Erreur sauvegarde fiscal:', error);
     } finally {
       setLoading(false);
     }
@@ -412,7 +414,7 @@ export function SettingsPage() {
         alert(response.message || 'Erreur lors du changement de mot de passe');
       }
     } catch (error) {
-      console.error('Erreur changement mot de passe:', error);
+      logger.error('Erreur changement mot de passe:', error);
     } finally {
       setLoading(false);
     }
@@ -430,7 +432,7 @@ export function SettingsPage() {
         alert(response.message || 'Erreur lors du changement de plan');
       }
     } catch (error) {
-      console.error('Erreur changement plan:', error);
+      logger.error('Erreur changement plan:', error);
     } finally {
       setLoading(false);
     }

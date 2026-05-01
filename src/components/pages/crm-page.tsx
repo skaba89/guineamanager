@@ -30,6 +30,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 interface Prospect {
   id: string;
@@ -108,7 +110,7 @@ function CRMPageComponent() {
       setOpportunites(opportunitesRes.data.data || []);
       setActivites(activitesRes.data.data || []);
     } catch (error) {
-      console.error('Erreur chargement données CRM:', error);
+      logger.error('Erreur chargement données CRM:', error);
     } finally {
       setLoading(false);
     }
@@ -171,7 +173,7 @@ function CRMPageComponent() {
       setShowNewProspect(false);
       loadData();
     } catch (error) {
-      console.error('Erreur création prospect:', error);
+      logger.error('Erreur création prospect:', error);
     }
   };
 
@@ -188,7 +190,7 @@ function CRMPageComponent() {
       setShowNewOpportunite(false);
       loadData();
     } catch (error) {
-      console.error('Erreur création opportunité:', error);
+      logger.error('Erreur création opportunité:', error);
     }
   };
 
@@ -207,7 +209,7 @@ function CRMPageComponent() {
       setShowNewActivite(false);
       loadData();
     } catch (error) {
-      console.error('Erreur création activité:', error);
+      logger.error('Erreur création activité:', error);
     }
   };
 
@@ -217,7 +219,7 @@ function CRMPageComponent() {
       await api.post(`/crm/prospects/${prospectId}/convertir`);
       loadData();
     } catch (error) {
-      console.error('Erreur conversion prospect:', error);
+      logger.error('Erreur conversion prospect:', error);
     }
   };
 
@@ -227,7 +229,7 @@ function CRMPageComponent() {
       await api.post(`/crm/opportunites/${opportuniteId}/gagner`);
       loadData();
     } catch (error) {
-      console.error('Erreur gain opportunité:', error);
+      logger.error('Erreur gain opportunité:', error);
     }
   };
 

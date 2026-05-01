@@ -14,8 +14,19 @@ export const createProduit = async (
 ) => {
   const produit = await prisma.produit.create({
     data: {
-      ...data,
-      companyId,
+      nom: data.nom,
+      description: data.description,
+      prixUnitaire: data.prixUnitaire,
+      unite: data.unite,
+      stockActuel: data.stockActuel ?? 0,
+      stockMin: data.stockMin ?? 0,
+      categorie: data.categorie,
+      type: data.type ?? 'PRODUIT',
+      tva: data.tva ?? 18,
+      actif: data.actif ?? true,
+      company: {
+        connect: { id: companyId },
+      },
     },
   });
 

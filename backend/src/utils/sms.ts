@@ -97,13 +97,10 @@ export const sendSms = async (
       // Logger en DB
       await prisma.smsLog.create({
         data: {
-          companyId: options?.companyId,
-          userId: options?.userId,
-          phone: normalizedPhone,
+          telephone: normalizedPhone,
           message,
-          messageId: recipient.messageId,
-          status: 'SENT',
-          smsType: options?.smsType || 'GENERAL',
+          statut: 'SENT',
+          cout: parseFloat(recipient.cost) * 100 || 0,
         },
       });
 
@@ -126,13 +123,10 @@ export const sendSms = async (
     // Logger l'échec
     await prisma.smsLog.create({
       data: {
-        companyId: options?.companyId,
-        userId: options?.userId,
-        phone: normalizedPhone,
+        telephone: normalizedPhone,
         message,
-        status: 'FAILED',
-        errorMessage,
-        smsType: options?.smsType || 'GENERAL',
+        statut: 'FAILED',
+        erreur: errorMessage,
       },
     });
 

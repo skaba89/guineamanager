@@ -80,7 +80,7 @@ export const createBulletinPaie = async (
   // Create payslip
   const bulletin = await prisma.bulletinPaie.create({
     data: {
-      employeId: data.employeId,
+      employe: { connect: { id: data.employeId } },
       mois: data.mois,
       annee: data.annee,
       salaireBase: payroll.salaireBase,
@@ -101,7 +101,7 @@ export const createBulletinPaie = async (
       baseImposable: payroll.brutTotal - payroll.cnssEmploye,
       totalRetenues: payroll.cnssEmploye + payroll.ipr + payroll.autresRetenues + payroll.acomptes,
       netImposable: payroll.brutTotal - payroll.cnssEmploye,
-      companyId,
+      company: { connect: { id: companyId } },
     },
     include: {
       employe: true,
@@ -435,7 +435,7 @@ export const generateBulletinsMois = async (
       // Create bulletin
       const bulletin = await prisma.bulletinPaie.create({
         data: {
-          employeId: employe.id,
+          employe: { connect: { id: employe.id } },
           mois,
           annee,
           salaireBase: payroll.salaireBase,
@@ -452,7 +452,11 @@ export const generateBulletinsMois = async (
           acomptes: payroll.acomptes,
           netAPayer: payroll.netAPayer,
           coutTotalEmployeur: payroll.coutTotalEmployeur,
-          companyId,
+          baseCNSS: payroll.brutTotal,
+          baseImposable: payroll.brutTotal - payroll.cnssEmploye,
+          totalRetenues: payroll.cnssEmploye + payroll.ipr + payroll.autresRetenues + payroll.acomptes,
+          netImposable: payroll.brutTotal - payroll.cnssEmploye,
+          company: { connect: { id: companyId } },
         },
       });
 

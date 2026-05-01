@@ -36,22 +36,38 @@ export const createEmploye = async (
   companyId: string,
   data: CreateEmployeInput
 ) => {
-  // Check if matricule already exists
-  if (data.matricule) {
-    const existingEmploye = await prisma.employe.findUnique({
-      where: { matricule: data.matricule },
-    });
+  const matricule = data.matricule || (await generateMatricule(companyId));
+  
+  // Check if matricule already exists for this company
+  const existingEmploye = await prisma.employe.findFirst({
+    where: { matricule, companyId },
+  });
 
-    if (existingEmploye) {
-      throw new ConflictError('Un employé avec ce matricule existe déjà');
-    }
+  if (existingEmploye) {
+    throw new ConflictError('Un employé avec ce matricule existe déjà');
   }
 
   const employe = await prisma.employe.create({
     data: {
-      ...data,
-      matricule: data.matricule || (await generateMatricule(companyId)),
-      companyId,
+      matricule,
+      nom: data.nom,
+      prenom: data.prenom,
+      email: data.email,
+      telephone: data.telephone,
+      adresse: data.adresse,
+      dateNaissance: data.dateNaissance,
+      lieuNaissance: data.lieuNaissance,
+      nationalite: data.nationalite,
+      situationMatrimoniale: data.situationMatrimoniale,
+      nombreEnfants: data.nombreEnfants,
+      dateEmbauche: data.dateEmbauche,
+      poste: data.poste,
+      departement: data.departement,
+      salaireBase: data.salaireBase,
+      typeContrat: data.typeContrat,
+      dureeContratMois: data.dureeContratMois,
+      numeroCNSS: data.numeroCNSS,
+      company: { connect: { id: companyId } },
     },
   });
 
@@ -149,8 +165,8 @@ export const updateEmploye = async (
 
   // Check if matricule is being changed and already exists
   if (data.matricule && data.matricule !== existingEmploye.matricule) {
-    const matriculeExists = await prisma.employe.findUnique({
-      where: { matricule: data.matricule },
+    const matriculeExists = await prisma.employe.findFirst({
+      where: { matricule: data.matricule, companyId },
     });
 
     if (matriculeExists) {

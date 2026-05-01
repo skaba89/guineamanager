@@ -15,14 +15,14 @@ export const getCaMensuel = async (
 
   const result = await prisma.$queryRaw<{ mois: number; ca: bigint; nb: bigint }[]>`
     SELECT 
-      EXTRACT(MONTH FROM date)::int as mois,
-      SUM(total_ttc)::bigint as ca,
+      EXTRACT(MONTH FROM date_emission)::int as mois,
+      SUM(montant_ttc)::bigint as ca,
       COUNT(*)::bigint as nb
     FROM "Facture"
     WHERE company_id = ${companyId}
-      AND EXTRACT(YEAR FROM date) = ${annee}
+      AND EXTRACT(YEAR FROM date_emission) = ${annee}
       AND statut IN ('PAYEE', 'PARTIELLEMENT_PAYEE')
-    GROUP BY EXTRACT(MONTH FROM date)
+    GROUP BY EXTRACT(MONTH FROM date_emission)
     ORDER BY mois
   `;
 
@@ -51,27 +51,27 @@ export const getTopClients = async (
   const cached = await cache.get(cacheKey);
   if (cached) return cached;
 
-  const whereClause = annee
-    ? prisma.$queryRaw<{ id: string; nom: string; ca: bigint; nb: bigint }[]>`
+  const result = annee
+    ? await prisma.$queryRaw<{ id: string; nom: string; ca: bigint; nb: bigint }[]>`
       SELECT 
         c.id,
         c.nom,
-        SUM(f.total_ttc)::bigint as ca,
+        SUM(f.montant_ttc)::bigint as ca,
         COUNT(f.id)::bigint as nb
       FROM "Client" c
       JOIN "Facture" f ON c.id = f.client_id
       WHERE c.company_id = ${companyId}
         AND f.statut IN ('PAYEE', 'PARTIELLEMENT_PAYEE')
-        AND EXTRACT(YEAR FROM f.date) = ${annee}
+        AND EXTRACT(YEAR FROM f.date_emission) = ${annee}
       GROUP BY c.id, c.nom
       ORDER BY ca DESC
       LIMIT ${limit}
     `
-    : prisma.$queryRaw<{ id: string; nom: string; ca: bigint; nb: bigint }[]>`
+    : await prisma.$queryRaw<{ id: string; nom: string; ca: bigint; nb: bigint }[]>`
       SELECT 
         c.id,
         c.nom,
-        SUM(f.total_ttc)::bigint as ca,
+        SUM(f.montant_ttc)::bigint as ca,
         COUNT(f.id)::bigint as nb
       FROM "Client" c
       JOIN "Facture" f ON c.id = f.client_id
@@ -81,8 +81,6 @@ export const getTopClients = async (
       ORDER BY ca DESC
       LIMIT ${limit}
     `;
-
-  const result = await whereClause;
 
   const data = result.map((r) => ({
     id: r.id,
@@ -107,8 +105,7 @@ export const getBilanSimplifie = async (
   const [
     caTotal,
     depensesTotal,
-    creances,
-    dettesFournisseurs,
+    creancesTotal,
     stockValeur,
     masseSalariale,
   ] = await Promise.all([
@@ -117,9 +114,9 @@ export const getBilanSimplifie = async (
       where: {
         companyId,
         statut: { in: ['PAYEE', 'PARTIELLEMENT_PAYEE'] },
-        date: { gte: start, lte: end },
+        dateEmission: { gte: start, lte: end },
       },
-      _sum: { totalTtc: true },
+      _sum: { montantTTC: true },
     }),
 
     // Dépenses totales
@@ -131,21 +128,15 @@ export const getBilanSimplifie = async (
       _sum: { montant: true },
     }),
 
-    // Créances clients
+    // Créances clients (totalAchats non payés)
     prisma.client.aggregate({
       where: { companyId },
-      _sum: { soldeDu: true },
-    }),
-
-    // Dettes fournisseurs
-    prisma.fournisseur.aggregate({
-      where: { companyId },
-      _sum: { soldeDu: true },
+      _sum: { totalAchats: true },
     }),
 
     // Valeur du stock
     prisma.$queryRaw<{ total: bigint }[]>`
-      SELECT COALESCE(SUM(stock_actuel * prix_achat), 0)::bigint as total
+      SELECT COALESCE(SUM(stock_actuel * prix_unitaire), 0)::bigint as total
       FROM "Produit"
       WHERE company_id = ${companyId}
     `,
@@ -157,13 +148,13 @@ export const getBilanSimplifie = async (
         statut: 'PAYE',
         datePaiement: { gte: start, lte: end },
       },
-      _sum: { salaireNet: true },
+      _sum: { netAPayer: true },
     }),
   ]);
 
-  const ca = caTotal._sum.totalTtc || 0;
+  const ca = caTotal._sum.montantTTC || 0;
   const depenses = depensesTotal._sum.montant || 0;
-  const salaires = masseSalariale._sum.salaireNet || 0;
+  const salaires = masseSalariale._sum.netAPayer || 0;
 
   const resultatNet = ca - depenses - salaires;
 
@@ -182,11 +173,11 @@ export const getBilanSimplifie = async (
     },
     resultatNet,
     actif: {
-      creancesClients: creances._sum.soldeDu || 0,
+      creancesClients: creancesTotal._sum.totalAchats || 0,
       stock: Number(stockValeur[0]?.total || 0),
     },
     passif: {
-      dettesFournisseurs: dettesFournisseurs._sum.soldeDu || 0,
+      dettesFournisseurs: 0,
     },
     rentabilite: ca > 0 ? ((resultatNet / ca) * 100).toFixed(2) : '0',
   };
@@ -214,7 +205,7 @@ export const exportDonnees = async (
           client: { select: { nom: true } },
           lignes: true,
         },
-        orderBy: { date: 'desc' },
+        orderBy: { dateEmission: 'desc' },
       });
       break;
     case 'produits':
@@ -226,9 +217,6 @@ export const exportDonnees = async (
     case 'depenses':
       data = await prisma.depense.findMany({
         where: { companyId },
-        include: {
-          fournisseur: { select: { nom: true } },
-        },
         orderBy: { date: 'desc' },
       });
       break;
@@ -278,14 +266,16 @@ export const getRapportImpayes = async (companyId: string) => {
       client: {
         select: { nom: true, telephone: true, email: true },
       },
+      paiements: true,
     },
-    orderBy: { date: 'asc' },
+    orderBy: { dateEmission: 'asc' },
   });
 
   const now = new Date();
   const impayes = factures.map((f) => {
-    const reste = f.totalTtc - f.montantPaye;
-    const echeance = f.echeance ? new Date(f.echeance) : null;
+    const montantPaye = f.paiements.reduce((sum, p) => sum + p.montant, 0);
+    const reste = f.montantTTC - montantPaye;
+    const echeance = f.dateEcheance ? new Date(f.dateEcheance) : null;
     const joursRetard = echeance
       ? Math.max(0, Math.floor((now.getTime() - echeance.getTime()) / (1000 * 60 * 60 * 24)))
       : 0;
@@ -294,11 +284,11 @@ export const getRapportImpayes = async (companyId: string) => {
       id: f.id,
       numero: f.numero,
       client: f.client,
-      montantTotal: f.totalTtc,
-      montantPaye: f.montantPaye,
+      montantTotal: f.montantTTC,
+      montantPaye,
       reste,
-      date: f.date,
-      echeance: f.echeance,
+      date: f.dateEmission,
+      echeance: f.dateEcheance,
       joursRetard,
       statut: joursRetard > 30 ? 'CRITIQUE' : joursRetard > 0 ? 'EN_RETARD' : 'A_JOUR',
     };

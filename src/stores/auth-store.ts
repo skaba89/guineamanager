@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Company, Client, Produit, Facture, Employe, Depense, DashboardStats, BulletinPaie } from '@/types';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 interface AppState {
   // Auth
@@ -188,7 +190,7 @@ export const useAppStore = create<AppState>()(
             });
           }
         } catch (error) {
-          console.error('checkAuth error:', error);
+          logger.error('checkAuth error:', error);
           set({ isLoading: false, isAuthenticated: false });
         }
       },
@@ -206,7 +208,7 @@ export const useAppStore = create<AppState>()(
             set({ clients: response.data });
           }
         } catch (error) {
-          console.error('Error fetching clients:', error);
+          logger.error('Error fetching clients:', error);
         }
       },
 
@@ -264,7 +266,7 @@ export const useAppStore = create<AppState>()(
             set({ produits: response.data });
           }
         } catch (error) {
-          console.error('Error fetching produits:', error);
+          logger.error('Error fetching produits:', error);
         }
       },
 
@@ -321,7 +323,7 @@ export const useAppStore = create<AppState>()(
             set({ factures: response.data });
           }
         } catch (error) {
-          console.error('Error fetching factures:', error);
+          logger.error('Error fetching factures:', error);
         }
       },
 
@@ -378,7 +380,7 @@ export const useAppStore = create<AppState>()(
             set({ employes: response.data });
           }
         } catch (error) {
-          console.error('Error fetching employes:', error);
+          logger.error('Error fetching employes:', error);
         }
       },
 
@@ -435,7 +437,7 @@ export const useAppStore = create<AppState>()(
             set({ bulletins: response.data });
           }
         } catch (error) {
-          console.error('Error fetching bulletins:', error);
+          logger.error('Error fetching bulletins:', error);
         }
       },
 
@@ -501,7 +503,7 @@ export const useAppStore = create<AppState>()(
             set({ depenses: response.data });
           }
         } catch (error) {
-          console.error('Error fetching depenses:', error);
+          logger.error('Error fetching depenses:', error);
         }
       },
 
@@ -558,7 +560,7 @@ export const useAppStore = create<AppState>()(
             set({ dashboardStats: response.data });
           }
         } catch (error) {
-          console.error('Error fetching dashboard stats:', error);
+          logger.error('Error fetching dashboard stats:', error);
         }
       },
 

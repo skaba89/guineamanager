@@ -45,6 +45,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 import { useAppStore } from '@/stores/auth-store';
 
 interface Commande {
@@ -158,7 +160,7 @@ export function CommandesPage() {
       if (produitsRes.success) setProduits(produitsRes.data || []);
       if (statsRes.success) setStats(statsRes.data);
     } catch (error) {
-      console.error('Erreur chargement:', error);
+      logger.error('Erreur chargement:', error);
     } finally {
       setLoading(false);
     }
@@ -185,7 +187,7 @@ export function CommandesPage() {
         alert(response.message || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur création:', error);
+      logger.error('Erreur création:', error);
     }
   };
 
@@ -200,7 +202,7 @@ export function CommandesPage() {
         loadData();
       }
     } catch (error) {
-      console.error('Erreur mise à jour statut:', error);
+      logger.error('Erreur mise à jour statut:', error);
     }
   };
 
@@ -217,7 +219,7 @@ export function CommandesPage() {
         loadData();
       }
     } catch (error) {
-      console.error('Erreur annulation:', error);
+      logger.error('Erreur annulation:', error);
     }
   };
 
@@ -236,7 +238,7 @@ export function CommandesPage() {
         alert(response.message || 'Erreur lors de la conversion');
       }
     } catch (error) {
-      console.error('Erreur conversion:', error);
+      logger.error('Erreur conversion:', error);
     }
   };
 
@@ -257,7 +259,7 @@ export function CommandesPage() {
         alert(response.message || 'Erreur lors de la création');
       }
     } catch (error) {
-      console.error('Erreur création livraison:', error);
+      logger.error('Erreur création livraison:', error);
     }
   };
 

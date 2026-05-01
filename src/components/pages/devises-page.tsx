@@ -21,6 +21,8 @@ import {
   CheckCircle
 } from 'lucide-react';
 import api from '@/lib/api';
+import { createLogger } from '@/lib/logger';
+const logger = createLogger('Settings');
 
 interface Devise {
   code: string;
@@ -81,7 +83,7 @@ function DevisesPageComponent() {
       setTauxActuels(tauxRes.data);
       setConversions(conversionsRes.data);
     } catch (error) {
-      console.error('Erreur chargement devises:', error);
+      logger.error('Erreur chargement devises:', error);
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ function DevisesPageComponent() {
       });
       setConversionResult(res.data);
     } catch (error) {
-      console.error('Erreur conversion:', error);
+      logger.error('Erreur conversion:', error);
     }
   };
 
@@ -120,7 +122,7 @@ function DevisesPageComponent() {
       setShowNewTaux(false);
       loadData();
     } catch (error) {
-      console.error('Erreur définition taux:', error);
+      logger.error('Erreur définition taux:', error);
     }
   };
 
@@ -129,7 +131,7 @@ function DevisesPageComponent() {
       await api.post('/devises/taux/update-api');
       loadData();
     } catch (error) {
-      console.error('Erreur mise à jour taux:', error);
+      logger.error('Erreur mise à jour taux:', error);
     }
   };
 
