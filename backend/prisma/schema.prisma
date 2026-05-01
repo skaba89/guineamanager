@@ -228,6 +228,8 @@ model Facture {
   montantHT    Int
   montantTVA   Int
   montantTTC   Int
+  totalTtc     Int            @default(0)
+  montantPaye  Int            @default(0)
   statut       String         @default("BROUILLON")
   modePaiement String?
   notes        String?
@@ -274,6 +276,7 @@ model Paiement {
   referenceMobile     String?
   orangeTransactionId String?
   mtnTransactionId    String?
+  waveTransactionId   String?
   notes               String?
   createdAt           DateTime @default(now())
   facture             Facture  @relation(fields: [factureId], references: [id])
@@ -655,35 +658,71 @@ model OrangeMoneyTransaction {
 }
 
 model MtnMoneyAccount {
-  id              String   @id @default(cuid())
-  companyId       String
-  subscriberKey   String
-  subscriptionKey String
-  apiKey          String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  companyId        String
+  subscriptionKey  String
+  disbursementKey  String?
+  accountNumber    String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([companyId])
 }
 
 model MtnMoneyTransaction {
-  id           String    @id @default(cuid())
-  companyId    String
-  reference    String    @unique
-  mtnTxId      String?
-  amount       Int
-  currency     String    @default("GNF")
-  phoneNumber  String
-  payerMessage String?
-  payeeNote    String?
-  status       String    @default("PENDING")
-  errorMessage String?
-  metadata     String?
-  expiresAt    DateTime?
-  completedAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  companyId             String
+  externalId            String    @unique
+  reference             String?
+  financialTransactionId String?
+  amount                Int
+  currency              String    @default("GNF")
+  customerPhone         String
+  customerName          String?
+  type                  String    @default("COLLECTION")
+  status                String    @default("PENDING")
+  errorMessage          String?
+  metadata              String?
+  completedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WaveAccount {
+  id            String   @id @default(cuid())
+  companyId     String
+  apiKey        String
+  apiSecret     String
+  accountNumber String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model WaveTransaction {
+  id            String    @id @default(cuid())
+  companyId     String
+  reference     String    @unique
+  waveId        String?
+  checkoutUrl   String?
+  amount        Int
+  currency      String    @default("GNF")
+  customerPhone String
+  customerName  String?
+  type          String    @default("CHECKOUT")
+  status        String    @default("PENDING")
+  errorMessage  String?
+  metadata      String?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([companyId])
   @@index([status])

@@ -36,6 +36,19 @@ const configSchema = z.object({
   orangeMoneyMerchantCode: z.string().optional(),
   orangeMoneyWebhookSecret: z.string().optional(),
   
+  // MTN Mobile Money
+  mtnMoneyApiUrl: z.string().default('https://proxy.momoapi.mtn.com'),
+  mtnMoneyUserId: z.string().optional(),
+  mtnMoneyApiKey: z.string().optional(),
+  mtnMoneySubscriptionKey: z.string().optional(),
+  mtnMoneyDisbursementUserId: z.string().optional(),
+  mtnMoneyDisbursementApiKey: z.string().optional(),
+  
+  // Wave
+  waveApiUrl: z.string().default('https://api.wave.com'),
+  waveClientId: z.string().optional(),
+  waveClientSecret: z.string().optional(),
+  
   // Resend Email
   resendApiKey: z.string().optional(),
   emailFrom: z.string().default('noreply@guineamanager.com'),
@@ -85,6 +98,15 @@ const parseConfig = () => {
     orangeMoneyClientSecret: process.env.ORANGE_MONEY_CLIENT_SECRET,
     orangeMoneyMerchantCode: process.env.ORANGE_MONEY_MERCHANT_CODE,
     orangeMoneyWebhookSecret: process.env.ORANGE_MONEY_WEBHOOK_SECRET,
+    mtnMoneyApiUrl: process.env.MTN_MONEY_API_URL,
+    mtnMoneyUserId: process.env.MTN_MONEY_USER_ID,
+    mtnMoneyApiKey: process.env.MTN_MONEY_API_KEY,
+    mtnMoneySubscriptionKey: process.env.MTN_MONEY_SUBSCRIPTION_KEY,
+    mtnMoneyDisbursementUserId: process.env.MTN_MONEY_DISBURSEMENT_USER_ID,
+    mtnMoneyDisbursementApiKey: process.env.MTN_MONEY_DISBURSEMENT_API_KEY,
+    waveApiUrl: process.env.WAVE_API_URL,
+    waveClientId: process.env.WAVE_CLIENT_ID,
+    waveClientSecret: process.env.WAVE_CLIENT_SECRET,
     resendApiKey: process.env.RESEND_API_KEY,
     emailFrom: process.env.EMAIL_FROM,
     supabaseUrl: process.env.SUPABASE_URL,
@@ -111,7 +133,7 @@ export const config = parseConfig();
 export type Config = z.infer<typeof configSchema>;
 
 // Helper pour vérifier si une fonctionnalité est activée
-export const isFeatureEnabled = (feature: 'sms' | 'email' | 'orangeMoney' | 'storage'): boolean => {
+export const isFeatureEnabled = (feature: 'sms' | 'email' | 'orangeMoney' | 'mtnMoney' | 'wave' | 'storage'): boolean => {
   switch (feature) {
     case 'sms':
       return !!config.africastalkingApiKey;
@@ -119,6 +141,10 @@ export const isFeatureEnabled = (feature: 'sms' | 'email' | 'orangeMoney' | 'sto
       return !!config.resendApiKey;
     case 'orangeMoney':
       return !!config.orangeMoneyClientId && !!config.orangeMoneyClientSecret;
+    case 'mtnMoney':
+      return !!config.mtnMoneyUserId && !!config.mtnMoneyApiKey;
+    case 'wave':
+      return !!config.waveClientId && !!config.waveClientSecret;
     case 'storage':
       return !!config.supabaseUrl && !!config.supabaseServiceKey;
     default:
