@@ -23,7 +23,7 @@ const DEMO_USER = {
   }
 };
 
-// Simple JWT-like token
+// Generate a simple token
 function createToken(user: any): string {
   const payload = Buffer.from(JSON.stringify({
     id: user.id,
@@ -36,11 +36,24 @@ function createToken(user: any): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Set CORS headers for preview environment
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle preflight
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers });
+  }
+
   try {
     const body = await request.json();
     const { email, password } = body;
 
-    // Check demo credentials
+    // Check demo credentials directly
     if (email === 'demo@guineamanager.com' && password === 'demo123') {
       return NextResponse.json({
         success: true,
@@ -48,12 +61,12 @@ export async function POST(request: NextRequest) {
           token: createToken(DEMO_USER),
           user: DEMO_USER
         }
-      });
+      }, { headers });
     }
 
     // Try backend for other users
     const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
-    
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
@@ -62,21 +75,35 @@ export async function POST(request: NextRequest) {
       });
 
       if (response.ok) {
-        return NextResponse.json(await response.json());
+        const data = await response.json();
+        return NextResponse.json(data, { headers });
       }
     } catch (e) {
-      // Backend unavailable
+      console.error('Backend error:', e);
     }
 
     return NextResponse.json({
       success: false,
       message: 'Email ou mot de passe incorrect'
-    }, { status: 401 });
+    }, { status: 401, headers });
 
   } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json({
       success: false,
       message: 'Erreur serveur'
-    }, { status: 500 });
+    }, { status: 500, headers });
   }
+}
+
+// Handle OPTIONS for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
