@@ -243,6 +243,151 @@ class ApiClient {
     return this.request<any[]>(`/paiements-mobile/transactions?${query.toString()}`);
   }
 
+  // MTN Mobile Money
+  async initiateMTNPayment(data: {
+    amount: number;
+    orderId: string;
+    customerPhone: string;
+    customerName?: string;
+    description?: string;
+    factureId?: string;
+  }) {
+    return this.request<{
+      reference: string;
+      transactionId: string;
+      status: string;
+      message: string;
+    }>('/mtn-money/demander-paiement', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMTNTransactions(params?: { status?: string; type?: string; limit?: number; offset?: number }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.type) query.set('type', params.type);
+    if (params?.limit) query.set('limit', params.limit.toString());
+    if (params?.offset) query.set('offset', params.offset.toString());
+    return this.request<any[]>(`/mtn-money/transactions?${query.toString()}`);
+  }
+
+  async getMTNTransactionStatus(reference: string) {
+    return this.request<any>(`/mtn-money/transactions/${reference}`);
+  }
+
+  async sendMTNTransfer(data: {
+    amount: number;
+    recipientPhone: string;
+    recipientName?: string;
+    description?: string;
+  }) {
+    return this.request<{
+      reference: string;
+      transactionId: string;
+      status: string;
+      message: string;
+    }>('/mtn-money/transfert', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMTNBalance() {
+    return this.request<{ availableBalance: string; currency: string }>('/mtn-money/solde');
+  }
+
+  async configureMTNAccount(data: {
+    subscriptionKey: string;
+    disbursementKey?: string;
+    accountNumber: string;
+  }) {
+    return this.request<{ success: boolean; message: string; accountNumber: string }>('/mtn-money/configurer', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Wave
+  async initiateWaveCheckout(data: {
+    amount: number;
+    orderId: string;
+    customerPhone: string;
+    customerName?: string;
+    description?: string;
+    factureId?: string;
+  }) {
+    return this.request<{
+      reference: string;
+      waveId: string;
+      checkoutUrl: string;
+      transactionId: string;
+      status: string;
+      message: string;
+    }>('/wave/checkout', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWaveTransactions(params?: { status?: string; type?: string; limit?: number; offset?: number }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.type) query.set('type', params.type);
+    if (params?.limit) query.set('limit', params.limit.toString());
+    if (params?.offset) query.set('offset', params.offset.toString());
+    return this.request<any[]>(`/wave/transactions?${query.toString()}`);
+  }
+
+  async getWaveTransactionStatus(id: string) {
+    return this.request<any>(`/wave/transactions/${id}`);
+  }
+
+  async sendWaveTransfer(data: {
+    amount: number;
+    recipientPhone: string;
+    recipientName?: string;
+    description?: string;
+  }) {
+    return this.request<{
+      reference: string;
+      waveId: string;
+      transactionId: string;
+      status: string;
+      message: string;
+    }>('/wave/transfert', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWaveBalance() {
+    return this.request<{ availableBalance: string; pendingBalance?: string; currency: string }>('/wave/solde');
+  }
+
+  async configureWaveAccount(data: {
+    apiKey: string;
+    apiSecret: string;
+    accountNumber: string;
+  }) {
+    return this.request<{ success: boolean; message: string; accountNumber: string }>('/wave/configurer', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Mobile Money Dashboard
+  async getMobileMoneyDashboard() {
+    return this.request<{
+      orangeMoney: { balance: number; transactions: number; lastSync: string };
+      mtnMoney: { balance: number; transactions: number; lastSync: string };
+      wave: { balance: number; transactions: number; lastSync: string };
+      totalBalance: number;
+      totalTransactions: number;
+      recentTransactions: any[];
+    }>('/mobile-money/dashboard');
+  }
+
   // ============ NOTIFICATIONS ============
   async getNotificationSettings() {
     return this.request<{
