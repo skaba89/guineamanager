@@ -2,10 +2,11 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { prisma } from '../index';
+import prisma from '../utils/database';
 import { generateToken } from '../utils/jwt';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { authMiddleware } from '../middlewares/auth';
 import { send2FACodeEmail, sendPasswordResetEmail } from '../utils/email';
+import { AuthenticatedRequest } from '../types';
 
 const router = Router();
 
@@ -70,10 +71,11 @@ function generateRecoveryCodes(): string[] {
 // ============================================================
 
 // GET /api/auth/2fa/status - Get 2FA status
-router.get('/2fa/status', authMiddleware, async (req: Request, res: Response) => {
+router.get('/status', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const { userId } = req as AuthenticatedRequest;
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id },
+      where: { id: userId },
       select: {
         twoFactorEnabled: true,
         twoFactorMethod: true,
@@ -105,14 +107,15 @@ router.get('/2fa/status', authMiddleware, async (req: Request, res: Response) =>
 });
 
 // POST /api/auth/2fa/setup/initiate - Initiate 2FA setup
-router.post('/2fa/setup/initiate', authMiddleware, async (req: Request, res: Response) => {
+router.post('/setup/initiate', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { method } = z.object({
       method: z.enum(['totp', 'sms'])
     }).parse(req.body);
 
+    const { userId } = req as AuthenticatedRequest;
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
+      where: { id: userId }
     });
 
     if (!user) {
@@ -193,14 +196,15 @@ router.post('/2fa/setup/initiate', authMiddleware, async (req: Request, res: Res
 });
 
 // POST /api/auth/2fa/setup/verify - Verify and enable 2FA
-router.post('/2fa/setup/verify', authMiddleware, async (req: Request, res: Response) => {
+router.post('/setup/verify', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { code } = z.object({
       code: z.string().min(6).max(6)
     }).parse(req.body);
 
+    const { userId } = req as AuthenticatedRequest;
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
+      where: { id: userId }
     });
 
     if (!user) {
@@ -263,7 +267,7 @@ router.post('/2fa/setup/verify', authMiddleware, async (req: Request, res: Respo
 });
 
 // POST /api/auth/2fa/verify - Verify 2FA during login
-router.post('/2fa/verify', async (req: Request, res: Response) => {
+router.post('/verify', async (req: Request, res: Response) => {
   try {
     const { tempToken, code } = z.object({
       tempToken: z.string(),
@@ -372,7 +376,7 @@ router.post('/2fa/verify', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/2fa/resend - Resend SMS OTP
-router.post('/2fa/resend', async (req: Request, res: Response) => {
+router.post('/resend', async (req: Request, res: Response) => {
   try {
     const { tempToken } = z.object({
       tempToken: z.string()
@@ -419,14 +423,15 @@ router.post('/2fa/resend', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/2fa/disable - Disable 2FA
-router.post('/2fa/disable', authMiddleware, async (req: Request, res: Response) => {
+router.post('/disable', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { password } = z.object({
       password: z.string().min(1)
     }).parse(req.body);
 
+    const { userId } = req as AuthenticatedRequest;
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
+      where: { id: userId }
     });
 
     if (!user) {
@@ -626,8 +631,9 @@ router.post('/verify-email', async (req: Request, res: Response) => {
 // POST /api/auth/resend-verification - Resend verification email
 router.post('/resend-verification', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const { userId } = req as AuthenticatedRequest;
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
+      where: { id: userId }
     });
 
     if (!user) {

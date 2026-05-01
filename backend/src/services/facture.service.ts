@@ -348,6 +348,93 @@ export const deleteFacture = async (companyId: string, factureId: string) => {
   return true;
 };
 
+// Alias for controller compatibility
+export const listFactures = getFactures;
+export const getFacture = getFactureById;
+
+/**
+ * Send invoice by email
+ */
+export const sendFacture = async (companyId: string, userId: string, factureId: string) => {
+  const facture = await getFactureById(companyId, factureId);
+  // TODO: Implement email sending
+  return { ...facture, sentAt: new Date() };
+};
+
+/**
+ * Generate PDF for invoice
+ */
+export const generatePdf = async (companyId: string, factureId: string) => {
+  const facture = await getFactureById(companyId, factureId);
+  // TODO: Implement PDF generation
+  const pdfContent = `Facture ${facture.numero}`;
+  return Buffer.from(pdfContent);
+};
+
+/**
+ * Record payment for invoice
+ */
+export const recordPayment = async (
+  companyId: string,
+  userId: string,
+  factureId: string,
+  data: { montant: number; mode: string; reference?: string }
+) => {
+  const facture = await prisma.facture.findFirst({
+    where: { id: factureId, companyId },
+  });
+  
+  if (!facture) {
+    throw new NotFoundError('Facture non trouvée');
+  }
+  
+  const paiement = await prisma.paiement.create({
+    data: {
+      factureId,
+      montant: data.montant,
+      mode: data.mode,
+      reference: data.reference,
+    },
+  });
+  
+  // Update invoice status if fully paid
+  const totalPaid = await prisma.paiement.aggregate({
+    where: { factureId },
+    _sum: { montant: true },
+  });
+  
+  if ((totalPaid._sum.montant || 0) >= facture.montantTTC) {
+    await prisma.facture.update({
+      where: { id: factureId },
+      data: { statut: 'payee' },
+    });
+  }
+  
+  return paiement;
+};
+
+/**
+ * Cancel invoice
+ */
+export const cancelFacture = async (companyId: string, userId: string, factureId: string) => {
+  const facture = await prisma.facture.findFirst({
+    where: { id: factureId, companyId },
+  });
+  
+  if (!facture) {
+    throw new NotFoundError('Facture non trouvée');
+  }
+  
+  if (facture.statut === 'payee') {
+    throw new ConflictError('Impossible d\'annuler une facture payée');
+  }
+  
+  return prisma.facture.update({
+    where: { id: factureId },
+    data: { statut: 'annulee' },
+  });
+};
+
 /**
  * Get invoice statistics
  */

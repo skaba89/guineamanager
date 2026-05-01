@@ -1,7 +1,7 @@
 // Service de Comptabilité OHADA pour GuinéaManager
 // Implémente le plan comptable Syscohada révisé
 
-import prisma from '../utils/prisma';
+import prisma from '../utils/database';
 import logger from '../utils/logger';
 
 // Plan comptable OHADA simplifié (classes principales)

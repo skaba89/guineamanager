@@ -140,7 +140,7 @@ export const updateStock = asyncHandler(
     const { companyId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const produit = await produitService.updateStock(
+    const produit = await produitService.updateStockWithOperation(
       companyId,
       id,
       validated.quantity,

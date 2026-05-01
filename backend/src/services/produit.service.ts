@@ -245,3 +245,68 @@ export const getProduitStats = async (companyId: string) => {
     categories,
   };
 };
+
+// ============ ALIASES FOR CONTROLLER COMPATIBILITY ============
+export const listProduits = getProduits;
+export const getProduit = getProduitById;
+export const getStockAlert = getProduitsStockBas;
+export const getStockStats = getProduitStats;
+
+/**
+ * Search products
+ */
+export const searchProduits = async (
+  companyId: string,
+  query: string,
+  limit: number = 10
+) => {
+  return prisma.produit.findMany({
+    where: {
+      companyId,
+      actif: true,
+      OR: [
+        { nom: { contains: query } },
+        { reference: { contains: query } },
+        { description: { contains: query } },
+      ],
+    },
+    take: limit,
+    orderBy: { nom: 'asc' },
+  });
+};
+
+/**
+ * Update stock with operation
+ */
+export const updateStockWithOperation = async (
+  companyId: string,
+  produitId: string,
+  quantity: number,
+  operation: 'ADD' | 'SUBTRACT' | 'SET' = 'ADD'
+) => {
+  const produit = await prisma.produit.findFirst({
+    where: { id: produitId, companyId },
+  });
+
+  if (!produit) {
+    throw new NotFoundError('Produit non trouvé');
+  }
+
+  let newStock = produit.stockActuel;
+  switch (operation) {
+    case 'ADD':
+      newStock = produit.stockActuel + quantity;
+      break;
+    case 'SUBTRACT':
+      newStock = Math.max(0, produit.stockActuel - quantity);
+      break;
+    case 'SET':
+      newStock = quantity;
+      break;
+  }
+
+  return prisma.produit.update({
+    where: { id: produitId },
+    data: { stockActuel: newStock },
+  });
+};

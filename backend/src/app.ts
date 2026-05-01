@@ -35,6 +35,12 @@ import bonsLivraisonRoutes from './routes/bons-livraison.routes';
 import comptabiliteRoutes from './routes/comptabilite.routes';
 import crmRoutes from './routes/crm.routes';
 import devisesRoutes from './routes/devises.routes';
+import fournisseursRoutes from './routes/fournisseurs.routes';
+import entrepotsRoutes from './routes/entrepots.routes';
+import supportRoutes from './routes/support.routes';
+import parametresRoutes from './routes/parametres.routes';
+import plansRoutes from './routes/plans.routes';
+import auth2faRoutes from './routes/auth-2fa.routes';
 
 // Créer l'application Express
 const app = express();
@@ -120,6 +126,12 @@ app.use('/api/docs', apiDocsRoutes);
 app.use('/api/comptabilite', comptabiliteRoutes);
 app.use('/api/crm', crmRoutes);
 app.use('/api/devises', devisesRoutes);
+app.use('/api/fournisseurs', fournisseursRoutes);
+app.use('/api/entrepots', entrepotsRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/parametres', parametresRoutes);
+app.use('/api/plans', plansRoutes);
+app.use('/api/auth/2fa', auth2faRoutes);
 
 // Gestion des erreurs
 app.use(notFoundHandler);
