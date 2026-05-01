@@ -133,19 +133,28 @@ function DevisesPageComponent() {
     }
   };
 
-  const getDeviseFlag = (code: string) => {
-    const flags: Record<string, string> = {
-      'GNF': '🇬🇳',
-      'XOF': '🌍',
-      'XAF': '🌍',
-      'EUR': '🇪🇺',
-      'USD': '🇺🇸',
-      'GBP': '🇬🇧',
-      'CNY': '🇨🇳',
-      'NGN': '🇳🇬',
-      'GHS': '🇬🇭',
+  const getDeviseInfo = (code: string) => {
+    const info: Record<string, { region: string; color: string }> = {
+      'GNF': { region: 'GN', color: 'from-red-500 to-yellow-500' },
+      'XOF': { region: 'XOF', color: 'from-emerald-500 to-teal-500' },
+      'XAF': { region: 'XAF', color: 'from-blue-500 to-indigo-500' },
+      'EUR': { region: 'EU', color: 'from-blue-600 to-indigo-600' },
+      'USD': { region: 'US', color: 'from-red-600 to-blue-600' },
+      'GBP': { region: 'UK', color: 'from-red-600 to-blue-800' },
+      'CNY': { region: 'CN', color: 'from-red-600 to-yellow-500' },
+      'NGN': { region: 'NG', color: 'from-green-600 to-white' },
+      'GHS': { region: 'GH', color: 'from-red-600 to-yellow-500' },
     };
-    return flags[code] || '🌍';
+    return info[code] || { region: 'WW', color: 'from-slate-500 to-slate-600' };
+  };
+
+  const DeviseBadge = ({ code }: { code: string }) => {
+    const info = getDeviseInfo(code);
+    return (
+      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white text-xs font-bold shadow-sm`}>
+        {info.region}
+      </div>
+    );
   };
 
   if (loading) {
@@ -260,7 +269,7 @@ function DevisesPageComponent() {
                     <TableRow key={item.code}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="text-xl">{getDeviseFlag(item.code)}</span>
+                          <DeviseBadge code={item.code} />
                           <span className="font-bold">{item.code}</span>
                         </div>
                       </TableCell>
@@ -293,7 +302,7 @@ function DevisesPageComponent() {
                 {devises.map((devise) => (
                   <Card key={devise.code} className="p-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl">{getDeviseFlag(devise.code)}</span>
+                      <DeviseBadge code={devise.code} />
                       <div>
                         <div className="font-bold">{devise.code}</div>
                         <div className="text-sm text-muted-foreground">{devise.nom}</div>
@@ -385,7 +394,10 @@ function DevisesPageComponent() {
                   <SelectContent>
                     {devises.map((d) => (
                       <SelectItem key={d.code} value={d.code}>
-                        {getDeviseFlag(d.code)} {d.code}
+                        <div className="flex items-center gap-2">
+                          <DeviseBadge code={d.code} />
+                          {d.code}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -400,7 +412,10 @@ function DevisesPageComponent() {
                   <SelectContent>
                     {devises.map((d) => (
                       <SelectItem key={d.code} value={d.code}>
-                        {getDeviseFlag(d.code)} {d.code}
+                        <div className="flex items-center gap-2">
+                          <DeviseBadge code={d.code} />
+                          {d.code}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

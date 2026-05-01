@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles, RefreshCw, BarChart3, Wallet, FileText, Wrench, Handshake, Package, Users, DollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,10 +26,10 @@ const SUGGESTED_QUESTIONS = [
 
 // Quick actions
 const QUICK_ACTIONS = [
-  { label: "📊 Analyse ventes", prompt: "Analyse mes ventes du mois dernier et donne-moi des recommandations" },
-  { label: "💰 Trésorerie", prompt: "Comment optimiser ma trésorerie ?" },
-  { label: "📋 Rapport", prompt: "Aide-moi à comprendre les rapports disponibles" },
-  { label: "🔧 Support", prompt: "J'ai besoin d'aide technique" },
+  { label: "Analyse ventes", icon: BarChart3, prompt: "Analyse mes ventes du mois dernier et donne-moi des recommandations" },
+  { label: "Trésorerie", icon: Wallet, prompt: "Comment optimiser ma trésorerie ?" },
+  { label: "Rapport", icon: FileText, prompt: "Aide-moi à comprendre les rapports disponibles" },
+  { label: "Support", icon: Wrench, prompt: "J'ai besoin d'aide technique" },
 ];
 
 export function ChatWidget() {
@@ -49,7 +49,7 @@ export function ChatWidget() {
       {
         id: 'welcome',
         role: 'assistant',
-        content: "👋 **Bienvenue !** Je suis votre assistant GuinéaManager propulsé par GLM-5.\n\nJe peux vous aider avec :\n- 📄 **Facturation & Devis**\n- 📦 **Gestion des stocks**\n- 👥 **Ressources humaines**\n- 💰 **Comptabilité OHADA**\n- 📊 **Analyses & Rapports**\n\nComment puis-je vous aider aujourd'hui ?",
+        content: "**Bienvenue !** Je suis votre assistant GuinéaManager propulsé par GLM-5.\n\nJe peux vous aider avec :\n- **Facturation & Devis**\n- **Gestion des stocks**\n- **Ressources humaines**\n- **Comptabilité OHADA**\n- **Analyses & Rapports**\n\nComment puis-je vous aider aujourd'hui ?",
         timestamp: new Date(),
       }
     ]);
@@ -117,7 +117,7 @@ export function ChatWidget() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "❌ Une erreur de connexion s'est produite. Veuillez vérifier votre connexion internet et réessayer.",
+        content: "Une erreur de connexion s'est produite. Veuillez vérifier votre connexion internet et réessayer.",
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -140,7 +140,7 @@ export function ChatWidget() {
       {
         id: Date.now().toString(),
         role: 'assistant',
-        content: "🔄 Conversation réinitialisée. Comment puis-je vous aider ?",
+        content: "Conversation réinitialisée. Comment puis-je vous aider ?",
         timestamp: new Date(),
       }
     ]);
@@ -253,15 +253,19 @@ export function ChatWidget() {
 
           {/* Quick Actions Bar */}
           <div className="px-4 py-2 border-t border-slate-100 flex gap-2 overflow-x-auto">
-            {QUICK_ACTIONS.map((action, i) => (
-              <button
-                key={i}
-                onClick={() => handleSuggestedQuestion(action.prompt)}
-                className="flex-shrink-0 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full transition-colors"
-              >
-                {action.label}
-              </button>
-            ))}
+            {QUICK_ACTIONS.map((action, i) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleSuggestedQuestion(action.prompt)}
+                  className="flex-shrink-0 flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {action.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Input */}

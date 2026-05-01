@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Check, X, ArrowRight, Play, Star, Shield, Zap, Globe, Users, 
   CreditCard, BarChart3, FileText, Settings, Smartphone, Mail,
-  ChevronDown, Menu, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram
+  ChevronDown, Menu, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram,
+  Sparkles
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -159,13 +160,13 @@ export default function LandingPage() {
   ];
 
   const countries = [
-    { name: 'Guinée', flag: '🇬🇳', currency: 'GNF' },
-    { name: 'Sénégal', flag: '🇸🇳', currency: 'XOF' },
-    { name: 'Mali', flag: '🇲🇱', currency: 'XOF' },
-    { name: 'Côte d\'Ivoire', flag: '🇨🇮', currency: 'XOF' },
-    { name: 'Burkina Faso', flag: '🇧🇫', currency: 'XOF' },
-    { name: 'Bénin', flag: '🇧🇯', currency: 'XOF' },
-    { name: 'Niger', flag: '🇳🇪', currency: 'XOF' },
+    { name: 'Guinée', code: 'GN', currency: 'GNF' },
+    { name: 'Sénégal', code: 'SN', currency: 'XOF' },
+    { name: 'Mali', code: 'ML', currency: 'XOF' },
+    { name: 'Côte d\'Ivoire', code: 'CI', currency: 'XOF' },
+    { name: 'Burkina Faso', code: 'BF', currency: 'XOF' },
+    { name: 'Bénin', code: 'BJ', currency: 'XOF' },
+    { name: 'Niger', code: 'NE', currency: 'XOF' },
   ];
 
   const formatPrice = (price: number) => {
@@ -242,8 +243,9 @@ export default function LandingPage() {
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-green-100 text-green-800 hover:bg-green-100">
-              🚀 Nouveau: Paiement Mobile Money intégré
+            <Badge className="mb-6 bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Nouveau: Paiement Mobile Money intégré
             </Badge>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -395,8 +397,10 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {countries.map((country, index) => (
-              <Card key={index} className="text-center py-6 hover:shadow-lg transition-shadow cursor-pointer">
-                <div className="text-4xl mb-2">{country.flag}</div>
+              <Card key={index} className="text-center py-6 hover:shadow-lg transition-shadow cursor-pointer border-slate-200">
+                <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20">
+                  {country.code}
+                </div>
                 <h3 className="font-semibold text-gray-900">{country.name}</h3>
                 <p className="text-sm text-gray-500">{country.currency}</p>
               </Card>
