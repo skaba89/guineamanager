@@ -2,7 +2,7 @@
 
 import prisma from '../utils/database';
 import { CreateFactureInput, UpdateFactureInput, factureFilterSchema } from '../utils/validation';
-import { NotFoundError, ConflictError, ValidationError } from '../middlewares/error.middleware';
+import { NotFoundError, ConflictError, ValidationError } from '../middlewares/errorHandler';
 import { z } from 'zod';
 
 /**
@@ -56,8 +56,12 @@ const calculateInvoiceTotals = (lignes: CreateFactureInput['lignes']) => {
  */
 export const createFacture = async (
   companyId: string,
-  data: CreateFactureInput
+  userIdOrData: string | CreateFactureInput,
+  maybeData?: CreateFactureInput
 ) => {
+  // Support both (companyId, data) and (companyId, userId, data) signatures
+  const data: CreateFactureInput = typeof userIdOrData === 'string' ? maybeData! : userIdOrData;
+  
   // Verify client exists and belongs to company
   const client = await prisma.client.findFirst({
     where: { id: data.clientId, companyId },
@@ -79,7 +83,7 @@ export const createFacture = async (
       numero,
       clientId: data.clientId,
       dateEmission: data.dateEmission || new Date(),
-      dateEcheance: data.dateEcheance,
+      dateEcheance: data.dateEcheance || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
       montantHT: totals.montantHT,
       montantTVA: totals.montantTVA,
       montantTTC: totals.montantTTC,
@@ -89,7 +93,7 @@ export const createFacture = async (
       lignes: {
         create: data.lignes.map((ligne) => ({
           produitId: ligne.produitId,
-          description: ligne.description,
+          description: (ligne as any).designation || ligne.description || '',
           quantite: ligne.quantite,
           prixUnitaire: ligne.prixUnitaire,
           tauxTVA: ligne.tauxTVA || 0,
@@ -357,8 +361,31 @@ export const getFacture = getFactureById;
  */
 export const sendFacture = async (companyId: string, userId: string, factureId: string) => {
   const facture = await getFactureById(companyId, factureId);
+  
+  // Check if invoice can be sent (must be in DRAFT/BROUILLON status)
+  const statutUpper = facture.statut.toUpperCase();
+  if (statutUpper !== 'BROUILLON') {
+    throw new ConflictError('Seules les factures en brouillon peuvent être envoyées');
+  }
+  
+  // Update status to ENVOYEE
+  const updatedFacture = await prisma.facture.update({
+    where: { id: factureId },
+    data: { 
+      statut: 'ENVOYEE',
+    },
+    include: {
+      client: true,
+      lignes: {
+        include: {
+          produit: true,
+        },
+      },
+    },
+  });
+  
   // TODO: Implement email sending
-  return { ...facture, sentAt: new Date() };
+  return updatedFacture;
 };
 
 /**

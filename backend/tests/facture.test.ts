@@ -5,7 +5,7 @@ import request from 'supertest';
 import app from '../src/app';
 import prisma from '../src/utils/prisma';
 import { hashPassword } from '../src/services/auth.service';
-import { generateTokenPair } from '../src/utils/jwt';
+import { generateToken } from '../src/utils/jwt';
 
 // Variables de test
 let testCompany: any;
@@ -50,8 +50,7 @@ describe('Factures', () => {
       data: {
         nom: 'Produit Test',
         reference: 'PRD-TEST-001',
-        prixAchat: 50000, // 500 GNF en centimes
-        prixVente: 100000, // 1000 GNF en centimes
+        prixUnitaire: 100000, // 1000 GNF en centimes
         stockActuel: 100,
         stockMin: 10,
         unite: 'unité',
@@ -60,13 +59,15 @@ describe('Factures', () => {
     });
 
     // Générer le token
-    const tokens = await generateTokenPair({
+    accessToken = generateToken({
+      id: testUser.id,
       userId: testUser.id,
       email: testUser.email,
+      nom: testUser.nom,
+      prenom: testUser.prenom,
       companyId: testCompany.id,
       role: testUser.role,
     });
-    accessToken = tokens.accessToken;
   });
 
   afterAll(async () => {
@@ -100,8 +101,8 @@ describe('Factures', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.numero).toMatch(/^FAC-\d{4}-\d{4}$/);
-      expect(response.body.data.totalHt).toBe(500000); // 5 * 100000
+      expect(response.body.data.numero).toMatch(/^FAC-\d{4}-\d{6}$/);
+      expect(response.body.data.montantHT).toBe(500000); // 5 * 100000
       expect(response.body.data.statut).toBe('BROUILLON');
     });
 

@@ -120,6 +120,9 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-start();
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  start();
+}
 
 export default app;

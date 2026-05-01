@@ -1,5 +1,5 @@
 // Tests du module Factures pour GuinéaManager ERP
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import prisma from '../src/utils/prisma';
 
 describe('Module Factures', () => {
@@ -8,6 +8,26 @@ describe('Module Factures', () => {
   let produitId: string;
 
   beforeEach(async () => {
+    // Nettoyer les factures de test existantes
+    await prisma.ligneFacture.deleteMany({
+      where: {
+        facture: {
+          OR: [
+            { numero: { startsWith: 'FAC-TEST' } },
+            { numero: { startsWith: `FAC-${new Date().getFullYear()}-000` } }
+          ]
+        }
+      }
+    });
+    await prisma.facture.deleteMany({
+      where: {
+        OR: [
+          { numero: { startsWith: 'FAC-TEST' } },
+          { numero: { startsWith: `FAC-${new Date().getFullYear()}-000` } }
+        ]
+      }
+    });
+
     // Créer une entreprise de test
     const company = await prisma.company.upsert({
       where: { id: 'test-company-factures' },
