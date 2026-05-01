@@ -23,6 +23,7 @@ import { FournisseursPage } from '@/components/pages/fournisseurs-page';
 import { ComptabilitePage } from '@/components/pages/comptabilite-page';
 import { CRMPage } from '@/components/pages/crm-page';
 import { DevisesPage } from '@/components/pages/devises-page';
+import { RHPage } from '@/components/pages/rh-page';
 import { ChatWidget } from '@/components/chatbot/ChatWidget';
 import { useAppStore } from '@/stores/auth-store';
 
@@ -38,6 +39,7 @@ const pageConfig: Record<string, { title: string; subtitle?: string }> = {
   stock: { title: 'Stock', subtitle: 'Gestion avancée des stocks' },
   fournisseurs: { title: 'Fournisseurs', subtitle: 'Gestion des fournisseurs' },
   crm: { title: 'CRM', subtitle: 'Gestion des prospects et opportunités' },
+  rh: { title: 'Ressources Humaines', subtitle: 'Gestion complète RH : congés, présences, recrutement' },
   employes: { title: 'Employés', subtitle: 'Gestion du personnel' },
   paie: { title: 'Paie', subtitle: 'Bulletins de paie et salaires' },
   depenses: { title: 'Dépenses', subtitle: 'Suivi des dépenses' },
@@ -125,6 +127,8 @@ export default function Home() {
         return <FournisseursPage />;
       case 'crm':
         return <CRMPage />;
+      case 'rh':
+        return <RHPage />;
       case 'employes':
         return <EmployesEnhancedPage />;
       case 'paie':
