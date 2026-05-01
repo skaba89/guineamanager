@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import { LoginPage } from '@/components/pages/login-page';
+import { SimpleLoginPage } from '@/components/pages/simple-login-page';
 import { RegisterPage } from '@/components/pages/register-page';
 import { DashboardPage } from '@/components/pages/dashboard-page';
 import { ClientsPage } from '@/components/pages/clients-page';
@@ -107,10 +107,7 @@ export default function Home() {
       );
     }
     return (
-      <LoginPage
-        onLogin={handleLogin}
-        onSwitchToRegister={() => setAuthMode('register')}
-      />
+      <SimpleLoginPage />
     );
   }
 
