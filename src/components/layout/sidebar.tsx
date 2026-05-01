@@ -24,7 +24,9 @@ import {
   ChevronRight,
   Sparkles,
   Brain,
-  Wand2
+  Wand2,
+  Smartphone,
+  Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/auth-store';
@@ -38,13 +40,17 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, color: 'text-emerald-500' },
-  { id: 'ai-dashboard', label: 'Tableau de Bord IA', icon: Brain, color: 'text-purple-500', badge: 'IA' },
+  { id: 'ai-predictive', label: 'IA Prédictive', icon: Brain, color: 'text-purple-500', badge: 'IA' },
   { id: 'ai-assistant', label: 'Assistant IA', icon: Wand2, color: 'text-pink-500', badge: 'Nouveau' },
+  { id: 'pos', label: 'Point de Vente', icon: Monitor, color: 'text-indigo-500', badge: 'POS' },
+  { id: 'mobile', label: 'App Mobile', icon: Smartphone, color: 'text-blue-500', badge: 'PWA' },
+  { id: 'mobile-money', label: 'Mobile Money', icon: DollarSign, color: 'text-orange-500', badge: 'GN' },
   { id: 'clients', label: 'Clients', icon: Users, color: 'text-blue-500' },
   { id: 'produits', label: 'Produits', icon: Package, color: 'text-purple-500' },
   { id: 'factures', label: 'Factures', icon: FileText, color: 'text-emerald-500' },
   { id: 'devis', label: 'Devis', icon: FileText, color: 'text-amber-500' },
   { id: 'commandes', label: 'Commandes', icon: ShoppingCart, color: 'text-pink-500' },
+  { id: 'logistique', label: 'Logistique', icon: Truck, color: 'text-teal-500', badge: 'GPS' },
   { id: 'stock', label: 'Stock', icon: Warehouse, color: 'text-orange-500' },
   { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck, color: 'text-teal-500' },
   { id: 'crm', label: 'CRM', icon: Target, color: 'text-indigo-500' },
