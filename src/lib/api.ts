@@ -1,5 +1,4 @@
 // API Client for GuinéaManager Backend
-// Uses relative URLs for maximum compatibility with preview environments
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -9,7 +8,7 @@ interface ApiResponse<T = any> {
 }
 
 class ApiClient {
-  private getToken(): string | null {
+  private getStoredToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('guineamanager-token');
     }
@@ -31,7 +30,7 @@ class ApiClient {
   }
 
   getToken(): string | null {
-    return this.getToken();
+    return this.getStoredToken();
   }
 
   private async request<T>(
@@ -43,12 +42,11 @@ class ApiClient {
       ...options.headers,
     };
 
-    const token = this.getToken();
+    const token = this.getStoredToken();
     if (token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    // Always use relative URL - this works in all environments
     const url = `/api${endpoint}`;
 
     try {
@@ -57,7 +55,6 @@ class ApiClient {
         headers,
       });
 
-      // Check if response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         return {
