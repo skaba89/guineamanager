@@ -1,680 +1,997 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-GuinéaManager ERP - Rapport d'Audit Complet
+GuinéaManager ERP - Audit Technique Complet
 Généré automatiquement par Z.ai
 """
 
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
-    PageBreak, Image
-)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+import sys
+import os
+
+# Add skills path
+sys.path.insert(0, '/home/z/my-project/skills/pdf/scripts')
+
 from reportlab.lib import colors
-from reportlab.lib.units import cm, inch
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch, cm
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+    PageBreak, Image, ListFlowable, ListItem
+)
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
-import os
 
-# Enregistrement des polices
-pdfmetrics.registerFont(TTFont('SimHei', '/usr/share/fonts/truetype/chinese/SimHei.ttf'))
-pdfmetrics.registerFont(TTFont('Microsoft YaHei', '/usr/share/fonts/truetype/chinese/msyh.ttf'))
-pdfmetrics.registerFont(TTFont('Times New Roman', '/usr/share/fonts/truetype/english/Times-New-Roman.ttf'))
-registerFontFamily('Microsoft YaHei', normal='Microsoft YaHei', bold='Microsoft YaHei')
-registerFontFamily('SimHei', normal='SimHei', bold='SimHei')
-registerFontFamily('Times New Roman', normal='Times New Roman', bold='Times New Roman')
+# ============================================================================
+# COLOR PALETTE (from pdf.py palette.generate)
+# ============================================================================
+ACCENT       = colors.HexColor('#af293f')
+TEXT_PRIMARY = colors.HexColor('#18191a')
+TEXT_MUTED   = colors.HexColor('#80888c')
+BG_SURFACE   = colors.HexColor('#e1e6e9')
+BG_PAGE      = colors.HexColor('#eceff1')
 
-# Configuration du document
-doc = SimpleDocTemplate(
-    "/home/z/my-project/download/GuineaManager_Audit_Complet.pdf",
-    pagesize=A4,
-    rightMargin=2*cm,
-    leftMargin=2*cm,
-    topMargin=2*cm,
-    bottomMargin=2*cm,
-    title="GuinéaManager ERP - Rapport d'Audit Complet",
-    author="Z.ai",
-    creator="Z.ai",
-    subject="Audit complet des boutons, menus, pages et règles métier"
-)
+TABLE_HEADER_COLOR = ACCENT
+TABLE_HEADER_TEXT  = colors.white
+TABLE_ROW_EVEN     = colors.white
+TABLE_ROW_ODD      = BG_SURFACE
 
-# Styles
+# ============================================================================
+# FONT REGISTRATION
+# ============================================================================
+pdfmetrics.registerFont(TTFont('NotoSerifSC', '/usr/share/fonts/truetype/noto-serif-sc/NotoSerifSC-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('NotoSerifSC-Bold', '/usr/share/fonts/truetype/noto-serif-sc/NotoSerifSC-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('SarasaMonoSC', '/usr/share/fonts/truetype/chinese/SarasaMonoSC-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'))
+
+registerFontFamily('NotoSerifSC', normal='NotoSerifSC', bold='NotoSerifSC-Bold')
+
+# ============================================================================
+# STYLES
+# ============================================================================
 styles = getSampleStyleSheet()
 
-# Styles personnalisés
-cover_title = ParagraphStyle(
-    'CoverTitle',
-    parent=styles['Title'],
-    fontName='Microsoft YaHei',
-    fontSize=32,
-    leading=40,
+# Title styles
+styles.add(ParagraphStyle(
+    name='MainTitle',
+    fontName='NotoSerifSC',
+    fontSize=28,
+    leading=36,
+    textColor=ACCENT,
     alignment=TA_CENTER,
-    textColor=colors.HexColor('#1F4E79'),
-    spaceAfter=20
-)
+    spaceAfter=20,
+))
 
-cover_subtitle = ParagraphStyle(
-    'CoverSubtitle',
-    parent=styles['Normal'],
-    fontName='SimHei',
-    fontSize=16,
-    leading=24,
-    alignment=TA_CENTER,
-    textColor=colors.HexColor('#666666'),
-    spaceAfter=10
-)
-
-h1_style = ParagraphStyle(
-    'H1Style',
-    parent=styles['Heading1'],
-    fontName='Microsoft YaHei',
-    fontSize=20,
-    leading=28,
-    textColor=colors.HexColor('#1F4E79'),
-    spaceBefore=24,
-    spaceAfter=12
-)
-
-h2_style = ParagraphStyle(
-    'H2Style',
-    parent=styles['Heading2'],
-    fontName='Microsoft YaHei',
-    fontSize=16,
-    leading=22,
-    textColor=colors.HexColor('#2E75B6'),
-    spaceBefore=18,
-    spaceAfter=8
-)
-
-h3_style = ParagraphStyle(
-    'H3Style',
-    parent=styles['Heading3'],
-    fontName='SimHei',
+styles.add(ParagraphStyle(
+    name='Subtitle',
+    fontName='NotoSerifSC',
     fontSize=14,
-    leading=18,
-    textColor=colors.HexColor('#333333'),
-    spaceBefore=12,
-    spaceAfter=6
-)
-
-body_style = ParagraphStyle(
-    'BodyStyle',
-    parent=styles['Normal'],
-    fontName='SimHei',
-    fontSize=11,
-    leading=16,
-    alignment=TA_LEFT,
-    wordWrap='CJK',
-    spaceAfter=8
-)
-
-header_style = ParagraphStyle(
-    'TableHeader',
-    fontName='Microsoft YaHei',
-    fontSize=10,
-    textColor=colors.white,
+    leading=20,
+    textColor=TEXT_MUTED,
     alignment=TA_CENTER,
-)
+    spaceAfter=30,
+))
 
-cell_style = ParagraphStyle(
-    'TableCell',
-    fontName='SimHei',
-    fontSize=9,
-    leading=12,
-    alignment=TA_CENTER,
-    wordWrap='CJK',
-)
+styles.add(ParagraphStyle(
+    name='H1',
+    fontName='NotoSerifSC',
+    fontSize=18,
+    leading=26,
+    textColor=ACCENT,
+    spaceBefore=24,
+    spaceAfter=12,
+))
 
-cell_left = ParagraphStyle(
-    'TableCellLeft',
-    fontName='SimHei',
-    fontSize=9,
-    leading=12,
-    alignment=TA_LEFT,
-    wordWrap='CJK',
-)
+styles.add(ParagraphStyle(
+    name='H2',
+    fontName='NotoSerifSC',
+    fontSize=14,
+    leading=20,
+    textColor=TEXT_PRIMARY,
+    spaceBefore=18,
+    spaceAfter=8,
+))
 
-# Construction du document
-story = []
-
-# ==================== PAGE DE COUVERTURE ====================
-story.append(Spacer(1, 3*cm))
-story.append(Paragraph("GuinéaManager ERP", cover_title))
-story.append(Spacer(1, 0.5*cm))
-story.append(Paragraph("Rapport d'Audit Complet", cover_subtitle))
-story.append(Spacer(1, 0.5*cm))
-story.append(Paragraph("État des lieux - Boutons, Menus, Pages et Règles Métier", cover_subtitle))
-story.append(Spacer(1, 2*cm))
-
-# Informations du projet
-info_style = ParagraphStyle(
-    'InfoStyle',
-    parent=styles['Normal'],
-    fontName='SimHei',
+styles.add(ParagraphStyle(
+    name='H3',
+    fontName='NotoSerifSC',
     fontSize=12,
     leading=18,
-    alignment=TA_CENTER,
-    textColor=colors.HexColor('#444444')
-)
-story.append(Paragraph("Version: 1.0.0", info_style))
-story.append(Paragraph("Date: 28 Mars 2026", info_style))
-story.append(Paragraph("Technologies: Next.js 16.2.1 | Express.js | Prisma | SQLite", info_style))
-story.append(Spacer(1, 2*cm))
+    textColor=TEXT_PRIMARY,
+    spaceBefore=12,
+    spaceAfter=6,
+))
 
-# Statut global
-status_data = [
-    [Paragraph('<b>Composant</b>', header_style), Paragraph('<b>Statut</b>', header_style), Paragraph('<b>Remarques</b>', header_style)],
-    [Paragraph('Pages Frontend', cell_style), Paragraph('✓ Fonctionnel', cell_style), Paragraph('16 pages disponibles', cell_left)],
-    [Paragraph('Routes API Backend', cell_style), Paragraph('✓ Fonctionnel', cell_style), Paragraph('25+ endpoints REST', cell_left)],
-    [Paragraph('Authentification', cell_style), Paragraph('✓ Fonctionnel', cell_style), Paragraph('JWT + Demo user', cell_left)],
-    [Paragraph('Navigation', cell_style), Paragraph('✓ Fonctionnel', cell_style), Paragraph('Sidebar + Header', cell_left)],
-    [Paragraph('Base de données', cell_style), Paragraph('✓ Fonctionnel', cell_style), Paragraph('Prisma + SQLite + Seed', cell_left)],
-    [Paragraph('Configuration Docker', cell_style), Paragraph('⚠ À vérifier', cell_style), Paragraph('Proxy API à tester', cell_left)],
+styles.add(ParagraphStyle(
+    name='Body',
+    fontName='NotoSerifSC',
+    fontSize=10.5,
+    leading=18,
+    textColor=TEXT_PRIMARY,
+    alignment=TA_LEFT,
+    wordWrap='CJK',
+    spaceBefore=0,
+    spaceAfter=8,
+))
+
+styles.add(ParagraphStyle(
+    name='BodyJustify',
+    fontName='NotoSerifSC',
+    fontSize=10.5,
+    leading=18,
+    textColor=TEXT_PRIMARY,
+    alignment=TA_JUSTIFY,
+    wordWrap='CJK',
+    spaceBefore=0,
+    spaceAfter=8,
+))
+
+styles.add(ParagraphStyle(
+    name='TableCell',
+    fontName='NotoSerifSC',
+    fontSize=9,
+    leading=14,
+    textColor=TEXT_PRIMARY,
+    alignment=TA_CENTER,
+    wordWrap='CJK',
+))
+
+styles.add(ParagraphStyle(
+    name='TableHeader',
+    fontName='NotoSerifSC',
+    fontSize=9,
+    leading=14,
+    textColor=colors.white,
+    alignment=TA_CENTER,
+))
+
+styles.add(ParagraphStyle(
+    name='Caption',
+    fontName='NotoSerifSC',
+    fontSize=9,
+    leading=14,
+    textColor=TEXT_MUTED,
+    alignment=TA_CENTER,
+    spaceBefore=4,
+    spaceAfter=12,
+))
+
+styles.add(ParagraphStyle(
+    name='StatusOK',
+    fontName='NotoSerifSC',
+    fontSize=10,
+    leading=16,
+    textColor=colors.HexColor('#16a34a'),
+))
+
+styles.add(ParagraphStyle(
+    name='StatusWarning',
+    fontName='NotoSerifSC',
+    fontSize=10,
+    leading=16,
+    textColor=colors.HexColor('#d97706'),
+))
+
+styles.add(ParagraphStyle(
+    name='StatusError',
+    fontName='NotoSerifSC',
+    fontSize=10,
+    leading=16,
+    textColor=colors.HexColor('#dc2626'),
+))
+
+# ============================================================================
+# DOCUMENT SETUP
+# ============================================================================
+output_path = '/home/z/my-project/download/Guineamanager_ERP_Audit_Technique.pdf'
+doc = SimpleDocTemplate(
+    output_path,
+    pagesize=A4,
+    leftMargin=2*cm,
+    rightMargin=2*cm,
+    topMargin=2*cm,
+    bottomMargin=2*cm,
+)
+
+story = []
+
+# ============================================================================
+# COVER PAGE
+# ============================================================================
+story.append(Spacer(1, 80))
+story.append(Paragraph('GUINÉAMANAGER ERP', styles['MainTitle']))
+story.append(Paragraph('Audit Technique Complet', styles['Subtitle']))
+story.append(Spacer(1, 30))
+story.append(Paragraph('Rapport d\'analyse, points forts, points faibles', styles['Subtitle']))
+story.append(Paragraph('et plan d\'évolution avec roadmap', styles['Subtitle']))
+story.append(Spacer(1, 60))
+
+# Metadata table
+meta_data = [
+    [Paragraph('<b>Version</b>', styles['TableCell']), Paragraph('1.0', styles['TableCell'])],
+    [Paragraph('<b>Date</b>', styles['TableCell']), Paragraph('01 Mai 2026', styles['TableCell'])],
+    [Paragraph('<b>Technologies</b>', styles['TableCell']), Paragraph('Next.js 16, React 19, Express.js, Prisma, SQLite', styles['TableCell'])],
+    [Paragraph('<b>Repository</b>', styles['TableCell']), Paragraph('github.com/skaba89/guineamanager', styles['TableCell'])],
+]
+meta_table = Table(meta_data, colWidths=[120, 300])
+meta_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, -1), BG_PAGE),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('LEFTPADDING', (0, 0), (-1, -1), 12),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+    ('TOPPADDING', (0, 0), (-1, -1), 8),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+]))
+story.append(meta_table)
+
+story.append(PageBreak())
+
+# ============================================================================
+# TABLE OF CONTENTS
+# ============================================================================
+story.append(Paragraph('TABLE DES MATIÈRES', styles['H1']))
+story.append(Spacer(1, 12))
+
+toc_items = [
+    ('1. Résumé Exécutif', 'Vue d\'ensemble de l\'état du projet'),
+    ('2. Architecture Technique', 'Stack technologique et structure'),
+    ('3. Audit Frontend', 'Pages, composants, API calls'),
+    ('4. Audit Backend', 'Endpoints, authentification, validation'),
+    ('5. Audit Base de Données', 'Modèles Prisma, relations, index'),
+    ('6. Points Forts', 'Ce qui fonctionne bien'),
+    ('7. Points Faibles', 'Ce qui nécessite attention'),
+    ('8. Fonctionnalités Manquantes', 'Pages et actions non implémentées'),
+    ('9. Plan de Correction', 'Actions prioritaires'),
+    ('10. Roadmap d\'Évolution', 'Phases de développement'),
 ]
 
-status_table = Table(status_data, colWidths=[4*cm, 3*cm, 8*cm])
-status_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
+for title, desc in toc_items:
+    story.append(Paragraph(f'<b>{title}</b>', styles['Body']))
+    story.append(Paragraph(f'    {desc}', styles['Body']))
+    story.append(Spacer(1, 4))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 1. RÉSUMÉ EXÉCUTIF
+# ============================================================================
+story.append(Paragraph('1. RÉSUMÉ EXÉCUTIF', styles['H1']))
+
+story.append(Paragraph(
+    'GuinéaManager ERP est un système de gestion d\'entreprise multi-pays conçu pour le marché ouest-africain, '
+    'avec une attention particulière pour la Guinée. L\'application adopte une architecture moderne avec Next.js 16 '
+    'pour le frontend et Express.js pour le backend, utilisant Prisma comme ORM et SQLite comme base de données. '
+    'Ce rapport d\'audit identifie les forces et faiblesses du système actuel, les fonctionnalités manquantes, '
+    'et propose un plan d\'évolution structuré avec une roadmap détaillée.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('1.1 Statistiques Clés', styles['H2']))
+
+stats_data = [
+    [Paragraph('<b>Catégorie</b>', styles['TableHeader']),
+     Paragraph('<b>Quantité</b>', styles['TableHeader']),
+     Paragraph('<b>État</b>', styles['TableHeader'])],
+    [Paragraph('Pages Frontend', styles['TableCell']),
+     Paragraph('29 pages', styles['TableCell']),
+     Paragraph('23 routes actives', styles['TableCell'])],
+    [Paragraph('Composants UI', styles['TableCell']),
+     Paragraph('53 composants', styles['TableCell']),
+     Paragraph('shadcn/ui', styles['TableCell'])],
+    [Paragraph('Endpoints Backend', styles['TableCell']),
+     Paragraph('~170 endpoints', styles['TableCell']),
+     Paragraph('95% implémentés', styles['TableCell'])],
+    [Paragraph('Modèles Prisma', styles['TableCell']),
+     Paragraph('59 modèles', styles['TableCell']),
+     Paragraph('Migration en attente', styles['TableCell'])],
+    [Paragraph('Console.log', styles['TableCell']),
+     Paragraph('~75 statements', styles['TableCell']),
+     Paragraph('À nettoyer', styles['TableCell'])],
+    [Paragraph('Mock Data', styles['TableCell']),
+     Paragraph('8+ générateurs', styles['TableCell']),
+     Paragraph('À remplacer', styles['TableCell'])],
+]
+
+stats_table = Table(stats_data, colWidths=[180, 120, 140])
+stats_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 6), (-1, 6), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ('LEFTPADDING', (0, 0), (-1, -1), 8),
     ('RIGHTPADDING', (0, 0), (-1, -1), 8),
     ('TOPPADDING', (0, 0), (-1, -1), 6),
     ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
 ]))
-story.append(status_table)
+story.append(stats_table)
+story.append(Paragraph('Tableau 1 : Statistiques clés du projet', styles['Caption']))
 
 story.append(PageBreak())
 
-# ==================== TABLE DES MATIÈRES ====================
-story.append(Paragraph("Table des Matières", h1_style))
-story.append(Spacer(1, 0.5*cm))
+# ============================================================================
+# 2. ARCHITECTURE TECHNIQUE
+# ============================================================================
+story.append(Paragraph('2. ARCHITECTURE TECHNIQUE', styles['H1']))
 
-toc_items = [
-    ("1. Architecture du Projet", ""),
-    ("2. Audit des Pages Frontend", ""),
-    ("   2.1 Pages d'Authentification", ""),
-    ("   2.2 Pages de Gestion", ""),
-    ("   2.3 Pages de Paramètres", ""),
-    ("3. Audit des Boutons", ""),
-    ("   3.1 Boutons d'Action Principaux", ""),
-    ("   3.2 Boutons de Formulaire", ""),
-    ("   3.3 Boutons de Navigation", ""),
-    ("4. Audit des Menus", ""),
-    ("   4.1 Sidebar Navigation", ""),
-    ("   4.2 Header Actions", ""),
-    ("   4.3 Command Palette", ""),
-    ("5. Règles Métier et Permissions", ""),
-    ("   5.1 Système de Rôles", ""),
-    ("   5.2 Middleware d'Authentification", ""),
-    ("   5.3 Configuration Multi-Pays", ""),
-    ("6. Recommandations", ""),
-    ("7. Conclusion", ""),
-]
+story.append(Paragraph('2.1 Stack Technologique', styles['H2']))
 
-for item, _ in toc_items:
-    story.append(Paragraph(item, body_style))
-story.append(Spacer(1, 0.5*cm))
-
-story.append(PageBreak())
-
-# ==================== 1. ARCHITECTURE ====================
-story.append(Paragraph("1. Architecture du Projet", h1_style))
-
-story.append(Paragraph("1.1 Vue d'ensemble", h2_style))
 story.append(Paragraph(
-    "GuinéaManager ERP est une application web moderne de type SaaS (Software as a Service) conçue pour les PME "
-    "guinéennes et ouest-africaines. L'application adopte une architecture client-serveur avec une séparation "
-    "claire entre le frontend (Next.js) et le backend (Express.js). Cette architecture permet une grande flexibilité "
-    "de déploiement, notamment via Docker où le frontend et le backend peuvent être conteneurisés séparément.",
-    body_style
+    'L\'application utilise une architecture moderne séparant clairement le frontend du backend. '
+    'Le frontend est construit avec Next.js 16 utilisant Turbopack, React 19, Tailwind CSS 4, et shadcn/ui '
+    'pour les composants d\'interface. Le backend utilise Express.js avec TypeScript, Prisma ORM, et SQLite '
+    'pour la persistance des données. Cette séparation permet une maintenance indépendante des deux couches '
+    'et facilite les déploiements scalables. L\'authentification est gérée via JWT avec support du 2FA (TOTP et SMS), '
+    'et le caching utilise Redis pour optimiser les performances des requêtes fréquentes.',
+    styles['BodyJustify']
 ))
 
-story.append(Paragraph("1.2 Stack Technique", h2_style))
+story.append(Paragraph('2.2 Structure du Projet', styles['H2']))
 
-tech_data = [
-    [Paragraph('<b>Couche</b>', header_style), Paragraph('<b>Technologie</b>', header_style), Paragraph('<b>Version</b>', header_style), Paragraph('<b>Description</b>', header_style)],
-    [Paragraph('Frontend', cell_style), Paragraph('Next.js', cell_style), Paragraph('16.2.1', cell_style), Paragraph('Framework React avec Turbopack', cell_left)],
-    [Paragraph('Backend', cell_style), Paragraph('Express.js', cell_style), Paragraph('4.x', cell_style), Paragraph('API REST Node.js', cell_left)],
-    [Paragraph('ORM', cell_style), Paragraph('Prisma', cell_style), Paragraph('5.x', cell_style), Paragraph('ORM TypeScript pour bases de données', cell_left)],
-    [Paragraph('Database', cell_style), Paragraph('SQLite', cell_style), Paragraph('3.x', cell_style), Paragraph('Base légère pour dev/demo', cell_left)],
-    [Paragraph('UI', cell_style), Paragraph('shadcn/ui', cell_style), Paragraph('latest', cell_style), Paragraph('Composants Radix + Tailwind', cell_left)],
-    [Paragraph('State', cell_style), Paragraph('Zustand', cell_style), Paragraph('4.x', cell_style), Paragraph('Gestion d\'état légère', cell_left)],
-    [Paragraph('Auth', cell_style), Paragraph('JWT', cell_style), Paragraph('jsonwebtoken', cell_style), Paragraph('Authentification stateless', cell_left)],
-    [Paragraph('Déploiement', cell_style), Paragraph('Docker', cell_style), Paragraph('multi-stage', cell_style), Paragraph('Conteneurisation', cell_left)],
+structure_data = [
+    [Paragraph('<b>Répertoire</b>', styles['TableHeader']),
+     Paragraph('<b>Contenu</b>', styles['TableHeader'])],
+    [Paragraph('src/components/pages/', styles['TableCell']),
+     Paragraph('29 composants de page (dashboard, clients, factures, etc.)', styles['TableCell'])],
+    [Paragraph('src/components/ui/', styles['TableCell']),
+     Paragraph('53 composants UI réutilisables (shadcn/ui)', styles['TableCell'])],
+    [Paragraph('src/lib/', styles['TableCell']),
+     Paragraph('API client, stores Zustand, utilitaires', styles['TableCell'])],
+    [Paragraph('backend/src/routes/', styles['TableCell']),
+     Paragraph('28 fichiers de routes API', styles['TableCell'])],
+    [Paragraph('backend/prisma/', styles['TableCell']),
+     Paragraph('Schéma Prisma, migrations, seed', styles['TableCell'])],
 ]
 
-tech_table = Table(tech_data, colWidths=[2.5*cm, 2.5*cm, 2.5*cm, 7.5*cm])
-tech_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
+structure_table = Table(structure_data, colWidths=[160, 280])
+structure_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 7), (-1, 7), colors.white),
-    ('BACKGROUND', (0, 8), (-1, 8), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+]))
+story.append(structure_table)
+story.append(Paragraph('Tableau 2 : Structure des répertoires principaux', styles['Caption']))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 3. AUDIT FRONTEND
+# ============================================================================
+story.append(Paragraph('3. AUDIT FRONTEND', styles['H1']))
+
+story.append(Paragraph('3.1 Pages Implémentées', styles['H2']))
+
+story.append(Paragraph(
+    'Le frontend compte 29 composants de page couvrant les fonctionnalités essentielles d\'un ERP moderne. '
+    'La navigation est gérée via une sidebar avec 23 routes actives. Chaque page implémente des fonctionnalités '
+    'spécifiques avec des formulaires, des tableaux de données, et des actions CRUD. Les pages principales '
+    'incluent le tableau de bord avec KPIs et graphiques, la gestion des clients avec filtres et recherche, '
+    'la facturation avec calcul TVA et export PDF, et les modules RH avec gestion des congés et de la paie.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('3.2 Inventaire des Pages', styles['H2']))
+
+pages_data = [
+    [Paragraph('<b>Module</b>', styles['TableHeader']),
+     Paragraph('<b>Pages</b>', styles['TableHeader']),
+     Paragraph('<b>Fonctionnalités</b>', styles['TableHeader'])],
+    [Paragraph('Core', styles['TableCell']),
+     Paragraph('Dashboard, Settings', styles['TableCell']),
+     Paragraph('KPIs, configuration, profil', styles['TableCell'])],
+    [Paragraph('Ventes', styles['TableCell']),
+     Paragraph('Clients, Factures, Devis, Commandes', styles['TableCell']),
+     Paragraph('CRUD, TVA, PDF, workflow', styles['TableCell'])],
+    [Paragraph('Achats', styles['TableCell']),
+     Paragraph('Fournisseurs, Commandes Fournisseur', styles['TableCell']),
+     Paragraph('Gestion fournisseurs, réception', styles['TableCell'])],
+    [Paragraph('Stock', styles['TableCell']),
+     Paragraph('Produits, Stock, Entrepôts, Inventaires', styles['TableCell']),
+     Paragraph('Alertes, transferts, valorisation', styles['TableCell'])],
+    [Paragraph('RH', styles['TableCell']),
+     Paragraph('Employés, Paie, Dépenses', styles['TableCell']),
+     Paragraph('Congés, bulletins, cotisations', styles['TableCell'])],
+    [Paragraph('Finance', styles['TableCell']),
+     Paragraph('Comptabilité, Devises, Rapports', styles['TableCell']),
+     Paragraph('OHADA, multi-devises, exports', styles['TableCell'])],
+    [Paragraph('CRM', styles['TableCell']),
+     Paragraph('CRM, Logistique', styles['TableCell']),
+     Paragraph('Prospects, opportunités, livraisons', styles['TableCell'])],
+    [Paragraph('IA', styles['TableCell']),
+     Paragraph('AI Predictive, AI Assistant', styles['TableCell']),
+     Paragraph('Prédictions, classification OHADA', styles['TableCell'])],
+    [Paragraph('Mobile', styles['TableCell']),
+     Paragraph('POS, Mobile App, Mobile Money', styles['TableCell']),
+     Paragraph('Vente, PWA, Orange/MTN/Wave', styles['TableCell'])],
+]
+
+pages_table = Table(pages_data, colWidths=[80, 150, 210])
+pages_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
+    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 6), (-1, 6), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 8), (-1, 8), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ('LEFTPADDING', (0, 0), (-1, -1), 6),
     ('RIGHTPADDING', (0, 0), (-1, -1), 6),
     ('TOPPADDING', (0, 0), (-1, -1), 5),
     ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
 ]))
-story.append(tech_table)
-story.append(Spacer(1, 0.5*cm))
+story.append(pages_table)
+story.append(Paragraph('Tableau 3 : Inventaire des pages par module', styles['Caption']))
 
-story.append(Paragraph("1.3 Flux de Communication", h2_style))
+story.append(Paragraph('3.3 Problèmes Identifiés dans le Frontend', styles['H2']))
+
 story.append(Paragraph(
-    "L'application utilise un pattern de proxy API pour la communication frontend-backend. Le frontend Next.js "
-    "expose une route API dynamique (/api/[...path]) qui sert de proxy vers le backend Express. Cette architecture "
-    "présente plusieurs avantages : elle évite les problèmes de CORS, permet un déploiement simplifié via Docker, "
-    "et offre une couche d'abstraction pour les futures modifications d'architecture. Le proxy utilise une variable "
-    "d'environnement BACKEND_URL (défaut: localhost:3001) pour déterminer l'adresse du backend.",
-    body_style
+    'L\'audit a révélé plusieurs problèmes nécessitant attention. Premièrement, environ 75 statements console.log '
+    'sont présents dans le code de production, principalement dans les pages settings, commandes, et crm. '
+    'Ces statements doivent être remplacés par un service de logging approprié. Deuxièmement, plusieurs générateurs '
+    'de données mock sont utilisés dans les modules IA et RH, simulant des réponses au lieu d\'appeler de vraies APIs. '
+    'Troisièmement, des pages dupliquées existent : login-page.tsx vs simple-login-page.tsx, factures-page.tsx vs '
+    'factures-enhanced-page.tsx, suggérant une refactorisation incomplète.',
+    styles['BodyJustify']
 ))
 
 story.append(PageBreak())
 
-# ==================== 2. AUDIT DES PAGES ====================
-story.append(Paragraph("2. Audit des Pages Frontend", h1_style))
+# ============================================================================
+# 4. AUDIT BACKEND
+# ============================================================================
+story.append(Paragraph('4. AUDIT BACKEND', styles['H1']))
 
-story.append(Paragraph("2.1 Pages d'Authentification", h2_style))
+story.append(Paragraph('4.1 Endpoints API', styles['H2']))
+
 story.append(Paragraph(
-    "Le système d'authentification comprend deux pages principales : la page de connexion (login-page.tsx) et "
-    "la page d'inscription (register-page.tsx). Ces pages sont affichées conditionnellement selon l'état "
-    "d'authentification de l'utilisateur, géré par le store Zustand (auth-store.ts).",
-    body_style
+    'Le backend expose environ 170 endpoints répartis en 28 fichiers de routes. L\'authentification couvre '
+    '14 endpoints incluant login, register, 2FA (setup, verify, disable), et récupération de mot de passe. '
+    'Les routes métier incluent la gestion des clients (7 endpoints), des produits (9 endpoints), des factures '
+    '(9 endpoints), des employés (7 endpoints), et de la paie (9 endpoints). Le module de comptabilité OHADA '
+    'implémente 13 endpoints pour la tenue des livres comptables. L\'API REST est bien structurée avec une '
+    'séparation claire des responsabilités par domaine fonctionnel.',
+    styles['BodyJustify']
 ))
 
-# Tableau des pages d'auth
-auth_pages = [
-    [Paragraph('<b>Page</b>', header_style), Paragraph('<b>Fichier</b>', header_style), Paragraph('<b>Boutons</b>', header_style), Paragraph('<b>Fonctionnalités</b>', header_style)],
-    [Paragraph('Connexion', cell_style), Paragraph('login-page.tsx', cell_style), Paragraph('1 principal', cell_style), Paragraph('Soumission du formulaire, afficher/masquer mot de passe, lien inscription', cell_left)],
-    [Paragraph('Inscription', cell_style), Paragraph('register-page.tsx', cell_style), Paragraph('1 principal', cell_style), Paragraph('Création compte + entreprise, sélection pays, redirection login', cell_left)],
+story.append(Paragraph('4.2 Authentification et Autorisation', styles['H2']))
+
+story.append(Paragraph(
+    'Le système d\'authentification utilise JWT avec bcrypt pour le hachage des mots de passe. Le 2FA est '
+    'implémenté via TOTP (compatible Google Authenticator) et SMS OTP. Cependant, l\'intégration du SMS gateway '
+    'n\'est pas complétée (3 commentaires TODO identifiés). Le contrôle d\'accès basé sur les rôles (RBAC) '
+    'définit 5 niveaux : OWNER (accès complet), ADMIN (configuration), COMPTABLE (paie, dépenses), MANAGER '
+    '(opérations), et EMPLOYE (lecture limitée). Le middleware d\'authentification valide systématiquement '
+    'le token et vérifie le statut actif de l\'utilisateur avant d\'autoriser l\'accès.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('4.3 Endpoints Partiellement Implémentés', styles['H2']))
+
+endpoints_issues = [
+    [Paragraph('<b>Fichier</b>', styles['TableHeader']),
+     Paragraph('<b>Ligne</b>', styles['TableHeader']),
+     Paragraph('<b>Problème</b>', styles['TableHeader'])],
+    [Paragraph('devis.routes.ts', styles['TableCell']),
+     Paragraph('229', styles['TableCell']),
+     Paragraph('Génération PDF non implémentée', styles['TableCell'])],
+    [Paragraph('devis.routes.ts', styles['TableCell']),
+     Paragraph('262', styles['TableCell']),
+     Paragraph('Envoi email avec PDF non implémenté', styles['TableCell'])],
+    [Paragraph('auth-2fa.routes.ts', styles['TableCell']),
+     Paragraph('170, 406', styles['TableCell']),
+     Paragraph('Intégration SMS gateway manquante', styles['TableCell'])],
+    [Paragraph('auth-2fa.routes.ts', styles['TableCell']),
+     Paragraph('658', styles['TableCell']),
+     Paragraph('Envoi email de vérification manquant', styles['TableCell'])],
 ]
 
-auth_table = Table(auth_pages, colWidths=[2.5*cm, 3*cm, 2.5*cm, 7*cm])
-auth_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
+endpoints_table = Table(endpoints_issues, colWidths=[140, 60, 250])
+endpoints_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+]))
+story.append(endpoints_table)
+story.append(Paragraph('Tableau 4 : Endpoints partiellement implémentés', styles['Caption']))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 5. AUDIT BASE DE DONNÉES
+# ============================================================================
+story.append(Paragraph('5. AUDIT BASE DE DONNÉES', styles['H1']))
+
+story.append(Paragraph('5.1 Modèles Prisma', styles['H2']))
+
+story.append(Paragraph(
+    'Le schéma Prisma définit 59 modèles couvrant tous les domaines fonctionnels de l\'ERP. Les modèles core '
+    'incluent Company (tenant), User, Client, et Produit. Les modèles de facturation couvrent Facture, LigneFacture, '
+    'Devis, LigneDevis, et Paiement. Le module RH inclut Employe, Conge, et BulletinPaie. La comptabilité OHADA '
+    'est bien représentée avec PlanComptableOHADA, ExerciceComptable, JournalComptable, EcritureComptable, '
+    'et les modèles de bilan. Cette modélisation complète permet une gestion intégrée de tous les processus métier.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('5.2 Problèmes Critiques Identifiés', styles['H2']))
+
+story.append(Paragraph(
+    'Un problème critique a été identifié dans le schéma Prisma : une erreur de syntaxe à la ligne 316 dans '
+    'la définition du modèle Employe. L\'expression @@unique(atricule, companyId]) contient deux erreurs : '
+    'le nom de champ devrait être "matricule" et le crochet fermant est mal positionné. Cette erreur peut '
+    'empêcher la migration de s\'appliquer correctement. De plus, la migration initiale existe mais n\'a pas '
+    'été appliquée à la base de données, ce qui signifie que le schéma réel peut différer du schéma Prisma.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('5.3 Index Manquants', styles['H2']))
+
+story.append(Paragraph(
+    'Plusieurs champs fréquemment utilisés dans les requêtes ne disposent pas d\'index, ce qui peut impacter '
+    'les performances sur de grands volumes de données. Les champs suivants bénéficieraient d\'un index : '
+    'clientId sur Facture (filtrage par client), dateEcheance sur Facture (factures en retard), date sur Paiement, '
+    'valide sur Depense (workflow d\'approbation), actif sur Employe et Produit (filtrage des actifs), et '
+    'createdAt sur SupportTicket (ordre chronologique). L\'ajout de ces index améliorerait significativement '
+    'les temps de réponse des pages listes.',
+    styles['BodyJustify']
+))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 6. POINTS FORTS
+# ============================================================================
+story.append(Paragraph('6. POINTS FORTS', styles['H1']))
+
+story.append(Paragraph(
+    'L\'audit a mis en évidence plusieurs points forts significatifs qui constituent une base solide pour '
+    'le développement futur de l\'application. Ces éléments témoignent d\'une architecture bien pensée et '
+    'd\'une implémentation de qualité sur de nombreux aspects.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('6.1 Architecture Moderne et Scalable', styles['H2']))
+
+story.append(Paragraph(
+    'L\'application adopte une architecture moderne avec une séparation claire entre frontend et backend. '
+    'L\'utilisation de Next.js 16 avec Turbopack pour le frontend et Express.js avec TypeScript pour le backend '
+    'permet une évolution indépendante des deux couches. Le choix de Prisma comme ORM facilite les opérations '
+    'de base de données et garantit la cohérence du typage. Cette architecture permet une mise à l\'échelle '
+    'horizontale et facilite les déploiements dans des environnements cloud.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('6.2 Couverture Fonctionnelle Complète', styles['H2']))
+
+story.append(Paragraph(
+    'L\'ERP couvre l\'ensemble des fonctionnalités attendues pour la gestion d\'une entreprise : '
+    'facturation avec calcul TVA et workflow de validation, gestion des stocks avec alertes et transferts '
+    'inter-entrepôts, ressources humaines avec congés et paie, comptabilité conforme au plan OHADA, et '
+    'CRM avec pipeline de vente. Cette couverture fonctionnelle complète permet à l\'application de répondre '
+    'aux besoins des PME ouest-africaines sans nécessiter de solutions complémentaires.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('6.3 Focus Marché Local', styles['H2']))
+
+story.append(Paragraph(
+    'L\'application démontre une attention particulière au marché ouest-africain avec l\'intégration des '
+    'paiements Mobile Money (Orange Money, MTN Money, Wave), le support multi-devises avec taux de change, '
+    'et la conformité comptable OHADA. L\'adaptation aux spécificités locales (congés, cotisations sociales, '
+    'jours fériés) par pays renforce la pertinence de la solution pour le marché cible. Cette localisation '
+    'constitue un avantage compétitif significatif face aux solutions internationales génériques.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('6.4 Expérience Utilisateur Professionnelle', styles['H2']))
+
+story.append(Paragraph(
+    'L\'interface utilisateur utilise shadcn/ui pour des composants modernes et accessibles. Le design '
+    'a été récemment amélioré avec le remplacement des emojis par des icônes SVG (lucide-react) pour '
+    'un rendu plus professionnel. Les formulaires disposent de validations côté client et les actions '
+    'sont accompagnées de feedback visuel (toasts, états de chargement). L\'application est responsive '
+    'et adaptée à différents formats d\'écran.',
+    styles['BodyJustify']
+))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 7. POINTS FAIBLES
+# ============================================================================
+story.append(Paragraph('7. POINTS FAIBLES', styles['H1']))
+
+story.append(Paragraph(
+    'L\'audit a également identifié des points faibles nécessitant correction pour garantir la stabilité '
+    'et la maintenabilité de l\'application. Ces éléments sont classés par niveau de priorité pour faciliter '
+    'la planification des corrections.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('7.1 Problèmes Critiques', styles['H2']))
+
+critical_data = [
+    [Paragraph('<b>Problème</b>', styles['TableHeader']),
+     Paragraph('<b>Impact</b>', styles['TableHeader']),
+     Paragraph('<b>Fichiers</b>', styles['TableHeader'])],
+    [Paragraph('Méthodes API manquantes', styles['TableCell']),
+     Paragraph('Erreurs runtime sur settings', styles['TableCell']),
+     Paragraph('src/lib/api.ts', styles['TableCell'])],
+    [Paragraph('Erreur syntaxe Prisma', styles['TableCell']),
+     Paragraph('Migration impossible', styles['TableCell']),
+     Paragraph('prisma/schema.prisma:316', styles['TableCell'])],
+    [Paragraph('SMS gateway non intégré', styles['TableCell']),
+     Paragraph('2FA SMS non fonctionnel', styles['TableCell']),
+     Paragraph('auth-2fa.routes.ts', styles['TableCell'])],
+    [Paragraph('Migration non appliquée', styles['TableCell']),
+     Paragraph('Schéma DB désynchronisé', styles['TableCell']),
+     Paragraph('prisma/migrations/', styles['TableCell'])],
+]
+
+critical_table = Table(critical_data, colWidths=[170, 140, 150])
+critical_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
+    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+]))
+story.append(critical_table)
+story.append(Paragraph('Tableau 5 : Problèmes critiques identifiés', styles['Caption']))
+
+story.append(Paragraph('7.2 Problèmes Moyens', styles['H2']))
+
+story.append(Paragraph(
+    'Plusieurs problèmes de priorité moyenne ont été identifiés. Le code de production contient environ '
+    '75 statements console.log qui doivent être remplacés par un service de logging structuré. Les modules '
+    'IA (ai-assistant-page.tsx et ai-predictive-page.tsx) utilisent des données mock au lieu d\'appeler '
+    'de vraies APIs d\'intelligence artificielle. Les méthodes API client utilisent le type "any" à de '
+    'nombreux endroits, réduisant les bénéfices du typage TypeScript. Enfin, les réponses d\'erreur API '
+    'ne sont pas standardisées, mélangeant les formats {success, message} et {error}.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('7.3 Problèmes Mineurs', styles['H2']))
+
+story.append(Paragraph(
+    'Des pages dupliquées suggèrent une refactorisation incomplète : login-page.tsx vs simple-login-page.tsx, '
+    'factures-page.tsx vs factures-enhanced-page.tsx, employes-page.tsx vs employes-enhanced-page.tsx. '
+    'La génération de QR codes dans mobile-money-page.tsx utilise un canvas aléatoire au lieu d\'une vraie '
+    'bibliothèque QR. Le placeholder de carte dans logistique-page.tsx (ligne 421) n\'est pas implémenté. '
+    'Ces éléments mineurs n\'empêchent pas le fonctionnement mais dégradent la qualité perçue.',
+    styles['BodyJustify']
+))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 8. FONCTIONNALITÉS MANQUANTES
+# ============================================================================
+story.append(Paragraph('8. FONCTIONNALITÉS MANQUANTES', styles['H1']))
+
+story.append(Paragraph('8.1 Méthodes API Client Manquantes', styles['H2']))
+
+story.append(Paragraph(
+    'L\'audit de l\'API client a révélé que plusieurs méthodes appelées par le frontend n\'existent pas '
+    'dans la classe ApiClient. Ces méthodes manquantes causent des erreurs TypeError à l\'exécution lorsque '
+    'les pages correspondantes sont chargées. Les méthodes génériques get(), post(), put(), delete() sont '
+    'appelées par de nombreuses pages mais ne sont pas définies, ce qui oblige à utiliser request() avec '
+    'des paramètres verbeux.',
+    styles['BodyJustify']
+))
+
+missing_api = [
+    [Paragraph('<b>Méthode</b>', styles['TableHeader']),
+     Paragraph('<b>Page appelante</b>', styles['TableHeader']),
+     Paragraph('<b>Route backend</b>', styles['TableHeader'])],
+    [Paragraph('api.get()', styles['TableCell']),
+     Paragraph('devises, crm, comptabilite', styles['TableCell']),
+     Paragraph('Générique GET', styles['TableCell'])],
+    [Paragraph('api.post()', styles['TableCell']),
+     Paragraph('devises, crm, comptabilite', styles['TableCell']),
+     Paragraph('Générique POST', styles['TableCell'])],
+    [Paragraph('getCommandesFournisseur()', styles['TableCell']),
+     Paragraph('fournisseurs-page.tsx:185', styles['TableCell']),
+     Paragraph('/fournisseurs/commandes/all', styles['TableCell'])],
+    [Paragraph('createCommandeFournisseur()', styles['TableCell']),
+     Paragraph('fournisseurs-page.tsx:235', styles['TableCell']),
+     Paragraph('/fournisseurs/commandes', styles['TableCell'])],
+    [Paragraph('createTransfert()', styles['TableCell']),
+     Paragraph('stock-page.tsx:245', styles['TableCell']),
+     Paragraph('/entrepots/transferts', styles['TableCell'])],
+]
+
+missing_table = Table(missing_api, colWidths=[150, 150, 160])
+missing_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
+    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ('LEFTPADDING', (0, 0), (-1, -1), 6),
     ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+    ('TOPPADDING', (0, 0), (-1, -1), 5),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
 ]))
-story.append(auth_table)
-story.append(Spacer(1, 0.5*cm))
+story.append(missing_table)
+story.append(Paragraph('Tableau 6 : Méthodes API client manquantes', styles['Caption']))
 
-story.append(Paragraph("2.2 Pages de Gestion", h2_style))
+story.append(Paragraph('8.2 Pages et Actions Non Fonctionnelles', styles['H2']))
+
 story.append(Paragraph(
-    "L'application dispose de 14 pages de gestion métier, chacune correspondant à un module fonctionnel spécifique. "
-    "Ces pages partagent une architecture commune avec une barre d'actions (recherche, filtres, bouton création), "
-    "un tableau de données, et des dialogues modaux pour les opérations CRUD.",
-    body_style
+    'Plusieurs pages présentent des fonctionnalités partiellement implémentées. La page de paramètres '
+    '(settings-page.tsx) appelle des méthodes API inexistantes (getPlans, getAbonnementActuel, get2FAStatus, '
+    'getMobileMoneyConfig, initiate2FASetup) causant des erreurs console. La page CRM (crm-page.tsx) utilise '
+    'api.get() et api.post() non définis pour les prospects, opportunités et activités. La page de devises '
+    '(devises-page.tsx) ne peut pas charger les taux de change ni effectuer de conversions. La page de '
+    'comptabilité (comptabilite-page.tsx) a des appels API similaires non fonctionnels.',
+    styles['BodyJustify']
 ))
 
-# Tableau des pages de gestion
-gestion_pages = [
-    [Paragraph('<b>Page</b>', header_style), Paragraph('<b>Module</b>', header_style), Paragraph('<b>Boutons Principaux</b>', header_style)],
-    [Paragraph('Dashboard', cell_style), Paragraph('Tableau de bord', cell_style), Paragraph('Navigation, actualisation', cell_left)],
-    [Paragraph('Clients', cell_style), Paragraph('CRM', cell_style), Paragraph('Nouveau client, Modifier, Supprimer', cell_left)],
-    [Paragraph('Produits', cell_style), Paragraph('Catalogue', cell_style), Paragraph('Nouveau produit, Modifier, Supprimer', cell_left)],
-    [Paragraph('Factures', cell_style), Paragraph('Facturation', cell_style), Paragraph('Nouvelle facture, Voir, Modifier, Supprimer', cell_left)],
-    [Paragraph('Devis', cell_style), Paragraph('Commercial', cell_style), Paragraph('Nouveau devis, Convertir en facture', cell_left)],
-    [Paragraph('Commandes', cell_style), Paragraph('Ventes', cell_style), Paragraph('Nouvelle commande, Suivi statut', cell_left)],
-    [Paragraph('Stock', cell_style), Paragraph('Inventaire', cell_style), Paragraph('Alertes, Transferts, Inventaire', cell_left)],
-    [Paragraph('Fournisseurs', cell_style), Paragraph('Achats', cell_style), Paragraph('Nouveau fournisseur, Commandes', cell_left)],
-    [Paragraph('CRM', cell_style), Paragraph('Prospects', cell_style), Paragraph('Nouveau prospect, Pipeline', cell_left)],
-    [Paragraph('Employés', cell_style), Paragraph('RH', cell_style), Paragraph('Nouvel employé, Modifier, Supprimer', cell_left)],
-    [Paragraph('Paie', cell_style), Paragraph('Paye', cell_style), Paragraph('Nouveau bulletin, Valider, Payer', cell_left)],
-    [Paragraph('Dépenses', cell_style), Paragraph('Comptabilité', cell_style), Paragraph('Nouvelle dépense, Catégories', cell_left)],
-    [Paragraph('Comptabilité', cell_style), Paragraph('OHADA', cell_style), Paragraph('Plan comptable, Écritures', cell_left)],
-    [Paragraph('Devises', cell_style), Paragraph('Multi-devises', cell_style), Paragraph('Taux de change, Conversion', cell_left)],
-    [Paragraph('Rapports', cell_style), Paragraph('Analytics', cell_style), Paragraph('Générer, Exporter PDF/Excel', cell_left)],
+story.append(Paragraph('8.3 Backend Routes Sans Frontend', styles['H2']))
+
+story.append(Paragraph(
+    'Inversement, plusieurs routes backend bien implémentées n\'ont pas de méthodes correspondantes dans '
+    'l\'API client frontend. Les routes /devis/* (stats, convert, send) sont implémentées côté serveur '
+    'mais non exposées au frontend. Les routes /commandes/* (cancel, facture, livraison) nécessitent des '
+    'méthodes dédiées. Les routes /support/* (tickets, faq, stats) sont complètement implémentées mais '
+    'inaccessibles depuis l\'interface. Cette lacune prive les utilisateurs de fonctionnalités pourtant '
+    'développées.',
+    styles['BodyJustify']
+))
+
+story.append(PageBreak())
+
+# ============================================================================
+# 9. PLAN DE CORRECTION
+# ============================================================================
+story.append(Paragraph('9. PLAN DE CORRECTION', styles['H1']))
+
+story.append(Paragraph(
+    'Le plan de correction est organisé en trois phases selon la priorité des corrections. Les actions '
+    'de priorité haute doivent être réalisées immédiatement car elles bloquent des fonctionnalités critiques. '
+    'Les actions de priorité moyenne améliorent la qualité et la maintenabilité. Les actions de priorité '
+    'basse concernent les optimisations et améliorations cosmétiques.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('9.1 Priorité Haute (Immédiat)', styles['H2']))
+
+high_priority = [
+    [Paragraph('<b>#</b>', styles['TableHeader']),
+     Paragraph('<b>Action</b>', styles['TableHeader']),
+     Paragraph('<b>Effort</b>', styles['TableHeader']),
+     Paragraph('<b>Impact</b>', styles['TableHeader'])],
+    [Paragraph('1', styles['TableCell']),
+     Paragraph('Ajouter méthodes get/post/put/delete génériques à ApiClient', styles['TableCell']),
+     Paragraph('1h', styles['TableCell']),
+     Paragraph('Critique', styles['TableCell'])],
+    [Paragraph('2', styles['TableCell']),
+     Paragraph('Corriger erreur syntaxe Prisma (schema.prisma:316)', styles['TableCell']),
+     Paragraph('15min', styles['TableCell']),
+     Paragraph('Critique', styles['TableCell'])],
+    [Paragraph('3', styles['TableCell']),
+     Paragraph('Appliquer migration Prisma en attente', styles['TableCell']),
+     Paragraph('15min', styles['TableCell']),
+     Paragraph('Critique', styles['TableCell'])],
+    [Paragraph('4', styles['TableCell']),
+     Paragraph('Ajouter méthodes API manquantes (fournisseurs, stock)', styles['TableCell']),
+     Paragraph('2h', styles['TableCell']),
+     Paragraph('Élevé', styles['TableCell'])],
+    [Paragraph('5', styles['TableCell']),
+     Paragraph('Intégrer SMS gateway pour 2FA (Twilio ou équivalent local)', styles['TableCell']),
+     Paragraph('4h', styles['TableCell']),
+     Paragraph('Élevé', styles['TableCell'])],
 ]
 
-gestion_table = Table(gestion_pages, colWidths=[3*cm, 3*cm, 9*cm])
-gestion_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
+high_table = Table(high_priority, colWidths=[30, 250, 60, 80])
+high_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 7), (-1, 7), colors.white),
-    ('BACKGROUND', (0, 8), (-1, 8), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 9), (-1, 9), colors.white),
-    ('BACKGROUND', (0, 10), (-1, 10), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 11), (-1, 11), colors.white),
-    ('BACKGROUND', (0, 12), (-1, 12), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 13), (-1, 13), colors.white),
-    ('BACKGROUND', (0, 14), (-1, 14), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 15), (-1, 15), colors.white),
-    ('BACKGROUND', (0, 16), (-1, 16), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ('LEFTPADDING', (0, 0), (-1, -1), 6),
     ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+    ('TOPPADDING', (0, 0), (-1, -1), 5),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
 ]))
-story.append(gestion_table)
-story.append(Spacer(1, 0.5*cm))
+story.append(high_table)
+story.append(Paragraph('Tableau 7 : Actions de priorité haute', styles['Caption']))
 
-story.append(PageBreak())
+story.append(Paragraph('9.2 Priorité Moyenne (Court terme)', styles['H2']))
 
-# ==================== 3. AUDIT DES BOUTONS ====================
-story.append(Paragraph("3. Audit des Boutons", h1_style))
-
-story.append(Paragraph("3.1 Boutons d'Action Principaux", h2_style))
 story.append(Paragraph(
-    "Les boutons d'action principaux sont identifiables par leur style distinctif : fond dégradé emerauld "
-    "(bg-gradient-to-r from-emerald-600 to-emerald-500) avec une ombre portée (shadow-lg shadow-emerald-500/25). "
-    "Ces boutons déclenchent les actions CRUD principales : création de nouvelles entités, validation de formulaires, "
-    "et actions critiques. Ils sont généralement accompagnés d'une icône (Plus, Save, Check) pour améliorer "
-    "l'expérience utilisateur.",
-    body_style
+    'Les actions de priorité moyenne incluent : le nettoyage des 75 statements console.log et leur '
+    'remplacement par un service de logging (pino ou winston), le remplacement des générateurs de données '
+    'mock par de vraies intégrations API dans les modules IA, l\'ajout d\'interfaces TypeScript pour '
+    'remplacer les types "any" dans l\'API client, la standardisation du format des réponses d\'erreur API, '
+    'et la suppression des pages dupliquées en conservant les versions "enhanced". L\'effort total estimé '
+    'pour ces corrections est de 2-3 jours de développement.',
+    styles['BodyJustify']
 ))
 
-story.append(Paragraph("3.2 Boutons de Formulaire", h2_style))
+story.append(Paragraph('9.3 Priorité Basse (Moyen terme)', styles['H2']))
+
 story.append(Paragraph(
-    "Les formulaires utilisent généralement deux boutons en bas du dialogue : un bouton d'annulation (variant='outline') "
-    "et un bouton de confirmation (couleur emerauld). Cette convention est respectée de manière cohérente à travers "
-    "toutes les pages de l'application, offrant une expérience utilisateur prévisible.",
-    body_style
-))
-
-story.append(Paragraph("3.3 Boutons de Navigation", h2_style))
-story.append(Paragraph(
-    "La navigation utilise principalement des boutons avec variant='ghost' ou 'outline' pour un aspect discret. "
-    "Le header inclut un bouton d'actions rapides qui ouvre la palette de commande, permettant un accès rapide "
-    "à toutes les fonctionnalités de l'application via le raccourci clavier Ctrl+K (ou Cmd+K sur Mac).",
-    body_style
-))
-
-# Tableau récapitulatif des boutons
-boutons_data = [
-    [Paragraph('<b>Type</b>', header_style), Paragraph('<b>Style</b>', header_style), Paragraph('<b>Usage</b>', header_style), Paragraph('<b>Exemples</b>', header_style)],
-    [Paragraph('Principal', cell_style), Paragraph('Emerald gradient', cell_style), Paragraph('Actions CRUD', cell_style), Paragraph('Nouveau client, Enregistrer, Valider', cell_left)],
-    [Paragraph('Secondaire', cell_style), Paragraph('Outline', cell_style), Paragraph('Annulation', cell_style), Paragraph('Annuler, Fermer', cell_left)],
-    [Paragraph('Tertiaire', cell_style), Paragraph('Ghost', cell_style), Paragraph('Actions légères', cell_style), Paragraph('Éditer, Voir, Icônes', cell_left)],
-    [Paragraph('Destructeur', cell_style), Paragraph('Red/Danger', cell_style), Paragraph('Suppression', cell_style), Paragraph('Supprimer, Annuler commande', cell_left)],
-    [Paragraph('Navigation', cell_style), Paragraph('Link style', cell_style), Paragraph('Redirections', cell_style), Paragraph('Créer un compte, Mot de passe oublié', cell_left)],
-]
-
-boutons_table = Table(boutons_data, colWidths=[2.5*cm, 3*cm, 3*cm, 6.5*cm])
-boutons_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(boutons_table)
-story.append(Spacer(1, 0.5*cm))
-
-story.append(PageBreak())
-
-# ==================== 4. AUDIT DES MENUS ====================
-story.append(Paragraph("4. Audit des Menus", h1_style))
-
-story.append(Paragraph("4.1 Sidebar Navigation", h2_style))
-story.append(Paragraph(
-    "La sidebar (sidebar.tsx) constitue le principal élément de navigation de l'application. Elle présente une "
-    "liste de 15 éléments de menu organisés de manière thématique. Chaque élément est associé à une icône colorée "
-    "distinctive (LayoutDashboard, Users, Package, FileText, etc.) permettant une identification visuelle rapide. "
-    "La sidebar supporte deux modes : étendu (w-64) et réduit (w-20), ce dernier n'affichant que les icônes. "
-    "Sur mobile, la sidebar se transforme en menu coulissant avec overlay.",
-    body_style
-))
-
-# Tableau des menus sidebar
-sidebar_menus = [
-    [Paragraph('<b>ID</b>', header_style), Paragraph('<b>Label</b>', header_style), Paragraph('<b>Icône</b>', header_style), Paragraph('<b>Couleur</b>', header_style)],
-    [Paragraph('dashboard', cell_style), Paragraph('Tableau de bord', cell_style), Paragraph('LayoutDashboard', cell_style), Paragraph('emerald-500', cell_style)],
-    [Paragraph('clients', cell_style), Paragraph('Clients', cell_style), Paragraph('Users', cell_style), Paragraph('blue-500', cell_style)],
-    [Paragraph('produits', cell_style), Paragraph('Produits', cell_style), Paragraph('Package', cell_style), Paragraph('purple-500', cell_style)],
-    [Paragraph('factures', cell_style), Paragraph('Factures', cell_style), Paragraph('FileText', cell_style), Paragraph('emerald-500', cell_style)],
-    [Paragraph('devis', cell_style), Paragraph('Devis', cell_style), Paragraph('FileText', cell_style), Paragraph('amber-500', cell_style)],
-    [Paragraph('commandes', cell_style), Paragraph('Commandes', cell_style), Paragraph('ShoppingCart', cell_style), Paragraph('pink-500', cell_style)],
-    [Paragraph('stock', cell_style), Paragraph('Stock', cell_style), Paragraph('Warehouse', cell_style), Paragraph('orange-500', cell_style)],
-    [Paragraph('fournisseurs', cell_style), Paragraph('Fournisseurs', cell_style), Paragraph('Truck', cell_style), Paragraph('teal-500', cell_style)],
-    [Paragraph('crm', cell_style), Paragraph('CRM', cell_style), Paragraph('Target', cell_style), Paragraph('indigo-500', cell_style)],
-    [Paragraph('employes', cell_style), Paragraph('Employés', cell_style), Paragraph('UserCog', cell_style), Paragraph('cyan-500', cell_style)],
-    [Paragraph('paie', cell_style), Paragraph('Paie', cell_style), Paragraph('Calculator', cell_style), Paragraph('green-500', cell_style)],
-    [Paragraph('depenses', cell_style), Paragraph('Dépenses', cell_style), Paragraph('Receipt', cell_style), Paragraph('red-500', cell_style)],
-    [Paragraph('comptabilite', cell_style), Paragraph('Comptabilité OHADA', cell_style), Paragraph('BookOpen', cell_style), Paragraph('violet-500', cell_style)],
-    [Paragraph('devises', cell_style), Paragraph('Multi-Devises', cell_style), Paragraph('DollarSign', cell_style), Paragraph('yellow-500', cell_style)],
-    [Paragraph('rapports', cell_style), Paragraph('Rapports', cell_style), Paragraph('BarChart3', cell_style), Paragraph('slate-500', cell_style)],
-]
-
-sidebar_table = Table(sidebar_menus, colWidths=[3*cm, 4*cm, 3.5*cm, 3.5*cm])
-sidebar_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 7), (-1, 7), colors.white),
-    ('BACKGROUND', (0, 8), (-1, 8), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 9), (-1, 9), colors.white),
-    ('BACKGROUND', (0, 10), (-1, 10), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 11), (-1, 11), colors.white),
-    ('BACKGROUND', (0, 12), (-1, 12), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 13), (-1, 13), colors.white),
-    ('BACKGROUND', (0, 14), (-1, 14), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 15), (-1, 15), colors.white),
-    ('BACKGROUND', (0, 16), (-1, 16), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 5),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-    ('FONTSIZE', (0, 0), (-1, -1), 8),
-]))
-story.append(sidebar_table)
-story.append(Spacer(1, 0.5*cm))
-
-story.append(Paragraph("4.2 Header Actions", h2_style))
-story.append(Paragraph(
-    "Le header (header.tsx) fournit un accès rapide aux fonctionnalités globales de l'application. Il comprend "
-    "un breadcrumb de navigation, un bouton de recherche/recherche rapide (ouvrant la palette de commande), "
-    "un bouton d'actions rapides, et une cloche de notifications avec indicateur de notifications non lues. "
-    "Le header utilise un style semi-transparent avec effet de flou (bg-white/80 backdrop-blur-md) pour un "
-    "effet moderne et élégant.",
-    body_style
-))
-
-story.append(Paragraph("4.3 Command Palette", h2_style))
-story.append(Paragraph(
-    "La palette de commande est un dialogue modal accessible via le raccourci Ctrl+K ou le bouton de recherche "
-    "dans le header. Elle permet de naviguer rapidement vers n'importe quelle page de l'application via une "
-    "recherche fuzzy. Elle affiche également 6 actions rapides (Nouvelle facture, Nouveau client, Nouveau produit, "
-    "Nouveau devis, Nouvelle commande, Nouveau prospect) qui redirigent vers les formulaires de création correspondants.",
-    body_style
+    'Les actions de priorité basse concernent l\'amélioration continue de la qualité. L\'ajout d\'index '
+    'sur les champs fréquemment requêtés améliorera les performances. L\'intégration d\'une vraie bibliothèque '
+    'QR code remplacera le générateur aléatoire. L\'implémentation de la carte dans le module logistique '
+    'nécessite une intégration avec un service de cartographie (Mapbox, OpenStreetMap). L\'ajout d\'audit '
+    'logging sur les opérations sensibles renforcera la traçabilité. Ces améliorations peuvent être planifiées '
+    'sur plusieurs sprints.',
+    styles['BodyJustify']
 ))
 
 story.append(PageBreak())
 
-# ==================== 5. RÈGLES MÉTIER ====================
-story.append(Paragraph("5. Règles Métier et Permissions", h1_style))
+# ============================================================================
+# 10. ROADMAP D'ÉVOLUTION
+# ============================================================================
+story.append(Paragraph('10. ROADMAP D\'ÉVOLUTION', styles['H1']))
 
-story.append(Paragraph("5.1 Système de Rôles", h2_style))
 story.append(Paragraph(
-    "Le système d'autorisation est basé sur 4 rôles principaux : ADMIN (accès complet), MANAGER (gestion des "
-    "opérations), COMPTABLE (facturation et paie), et EMPLOYE (consultation limitée). Le middleware requireRole() "
-    "permet de restreindre l'accès aux routes selon le rôle de l'utilisateur. Les rôles sont stockés en majuscules "
-    "dans la base de données pour assurer la cohérence.",
-    body_style
+    'La roadmap d\'évolution propose un plan de développement structuré sur 6 mois, organisé en sprints '
+    'de 2 semaines. Chaque phase inclut des objectifs spécifiques, des livrables mesurables, et des '
+    'critères de validation. Cette approche permet une livraison incrémentale de valeur tout en maintenant '
+    'la qualité du code.',
+    styles['BodyJustify']
 ))
 
-# Tableau des rôles
-roles_data = [
-    [Paragraph('<b>Rôle</b>', header_style), Paragraph('<b>Permissions</b>', header_style), Paragraph('<b>Accès</b>', header_style)],
-    [Paragraph('ADMIN', cell_style), Paragraph('Accès complet', cell_style), Paragraph('Toutes les fonctionnalités, gestion utilisateurs, paramètres', cell_left)],
-    [Paragraph('MANAGER', cell_style), Paragraph('Gestion opérationnelle', cell_style), Paragraph('CRUD clients, produits, factures, commandes, rapports', cell_left)],
-    [Paragraph('COMPTABLE', cell_style), Paragraph('Finance et paie', cell_style), Paragraph('Facturation, paie, dépenses, comptabilité, rapports', cell_left)],
-    [Paragraph('EMPLOYE', cell_style), Paragraph('Consultation', cell_style), Paragraph('Lecture seule, profil personnel', cell_left)],
+story.append(Paragraph('10.1 Phase 1 : Stabilisation (S1-S2, 1 mois)', styles['H2']))
+
+story.append(Paragraph(
+    'La première phase se concentre sur la correction des problèmes critiques identifiés dans l\'audit. '
+    'Le sprint 1 est dédié à la correction de l\'API client (ajout des méthodes manquantes, typage TypeScript), '
+    'la correction du schéma Prisma et l\'application des migrations. Le sprint 2 couvre l\'intégration '
+    'du SMS gateway, le nettoyage du code (console.log), et la mise en place d\'un service de logging '
+    'structuré. À l\'issue de cette phase, toutes les pages doivent être fonctionnelles sans erreur console.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('10.2 Phase 2 : Qualité (S3-S4, 1 mois)', styles['H2']))
+
+story.append(Paragraph(
+    'La deuxième phase améliore la qualité globale du code. Le sprint 3 inclut l\'ajout de tests unitaires '
+    'pour les services critiques (auth, facturation, paie), l\'implémentation de tests d\'intégration pour '
+    'les API principales, et la documentation Swagger des endpoints. Le sprint 4 couvre le remplacement '
+    'des mocks par de vraies APIs (GLM-5 pour l\'assistant IA), l\'ajout d\'index base de données, et '
+    'l\'optimisation des requêtes N+1. Cette phase porte la couverture de tests à 60% minimum.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('10.3 Phase 3 : Fonctionnalités (S5-S8, 2 mois)', styles['H2']))
+
+story.append(Paragraph(
+    'La troisième phase enrichit les fonctionnalités existantes. Le sprint 5 implémente l\'intégration '
+    'complète Orange Money avec webhooks, et l\'intégration MTN Money. Le sprint 6 ajoute le module de '
+    'rapports avancés avec exports Excel/PDF personnalisables. Le sprint 7 développe le tableau de bord '
+    'analytique avec KPIs personnalisables. Le sprint 8 intègre un système de notifications temps réel '
+    'via WebSockets. Chaque sprint livre une fonctionnalité complète et testée.',
+    styles['BodyJustify']
+))
+
+story.append(Paragraph('10.4 Phase 4 : Mobile & Excellence (S9-S12, 2 mois)', styles['H2']))
+
+story.append(Paragraph(
+    'La quatrième phase finalise l\'application mobile PWA et optimise l\'expérience utilisateur. '
+    'Le sprint 9 améliore la PWA avec mode offline complet et synchronisation. Le sprint 10 intègre '
+    'la géolocalisation pour le module logistique. Le sprint 11 optimise les performances (lazy loading, '
+    'code splitting, caching avancé). Le sprint 12 finalise avec une passe UX/UI, l\'accessibilité (WCAG), '
+    'et la documentation utilisateur. Cette phase prépare le produit pour une commercialisation.',
+    styles['BodyJustify']
+))
+
+story.append(Spacer(1, 20))
+
+# Roadmap summary table
+roadmap_data = [
+    [Paragraph('<b>Phase</b>', styles['TableHeader']),
+     Paragraph('<b>Durée</b>', styles['TableHeader']),
+     Paragraph('<b>Objectifs</b>', styles['TableHeader']),
+     Paragraph('<b>Livrables</b>', styles['TableHeader'])],
+    [Paragraph('1. Stabilisation', styles['TableCell']),
+     Paragraph('1 mois', styles['TableCell']),
+     Paragraph('Corrections critiques', styles['TableCell']),
+     Paragraph('API complète, DB migrée', styles['TableCell'])],
+    [Paragraph('2. Qualité', styles['TableCell']),
+     Paragraph('1 mois', styles['TableCell']),
+     Paragraph('Tests, documentation', styles['TableCell']),
+     Paragraph('60% coverage, Swagger', styles['TableCell'])],
+    [Paragraph('3. Fonctionnalités', styles['TableCell']),
+     Paragraph('2 mois', styles['TableCell']),
+     Paragraph('Mobile Money, rapports', styles['TableCell']),
+     Paragraph('Intégrations, analytics', styles['TableCell'])],
+    [Paragraph('4. Excellence', styles['TableCell']),
+     Paragraph('2 mois', styles['TableCell']),
+     Paragraph('PWA, UX, perf', styles['TableCell']),
+     Paragraph('Produit commercialisable', styles['TableCell'])],
 ]
 
-roles_table = Table(roles_data, colWidths=[3*cm, 4*cm, 7*cm])
-roles_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
+roadmap_table = Table(roadmap_data, colWidths=[100, 70, 130, 140])
+roadmap_table.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
+    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
+    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
 ]))
-story.append(roles_table)
-story.append(Spacer(1, 0.5*cm))
-
-story.append(Paragraph("5.2 Middleware d'Authentification", h2_style))
-story.append(Paragraph(
-    "Le middleware d'authentification (auth.middleware.ts) implémente la vérification des tokens JWT pour "
-    "chaque requête protégée. Il vérifie la présence du header Authorization au format 'Bearer <token>', "
-    "décode et valide le token, puis injecte les informations utilisateur (req.user) pour les handlers "
-    "suivants. Un middleware optionalAuth permet également l'authentification optionnelle pour les routes "
-    "publiques avec enrichissement conditionnel.",
-    body_style
-))
-
-story.append(Paragraph("5.3 Configuration Multi-Pays", h2_style))
-story.append(Paragraph(
-    "L'application supporte 7 pays d'Afrique de l'Ouest avec des configurations fiscales spécifiques. Chaque pays "
-    "dispose de taux CNSS (employé/employeur), plafonds de sécurité sociale, barèmes IR et taux TVA adaptés. "
-    "La sélection du pays lors de l'inscription détermine automatiquement la devise (GNF pour la Guinée, XOF pour "
-    "les pays de la zone CFA) et les paramètres fiscaux par défaut.",
-    body_style
-))
-
-# Tableau des pays supportés
-pays_data = [
-    [Paragraph('<b>Pays</b>', header_style), Paragraph('<b>Code</b>', header_style), Paragraph('<b>Devise</b>', header_style), Paragraph('<b>CNSS Emp.</b>', header_style), Paragraph('<b>CNSS Patr.</b>', header_style), Paragraph('<b>TVA</b>', header_style)],
-    [Paragraph('Guinée', cell_style), Paragraph('GN', cell_style), Paragraph('GNF', cell_style), Paragraph('5%', cell_style), Paragraph('18%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Sénégal', cell_style), Paragraph('SN', cell_style), Paragraph('XOF', cell_style), Paragraph('5.6%', cell_style), Paragraph('20.9%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Mali', cell_style), Paragraph('ML', cell_style), Paragraph('XOF', cell_style), Paragraph('5%', cell_style), Paragraph('17%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Côte d\'Ivoire', cell_style), Paragraph('CI', cell_style), Paragraph('XOF', cell_style), Paragraph('6.3%', cell_style), Paragraph('11.7%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Burkina Faso', cell_style), Paragraph('BF', cell_style), Paragraph('XOF', cell_style), Paragraph('5.5%', cell_style), Paragraph('16%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Bénin', cell_style), Paragraph('BJ', cell_style), Paragraph('XOF', cell_style), Paragraph('4%', cell_style), Paragraph('14%', cell_style), Paragraph('18%', cell_style)],
-    [Paragraph('Niger', cell_style), Paragraph('NE', cell_style), Paragraph('XOF', cell_style), Paragraph('4%', cell_style), Paragraph('15%', cell_style), Paragraph('18%', cell_style)],
-]
-
-pays_table = Table(pays_data, colWidths=[3*cm, 1.5*cm, 1.5*cm, 2.5*cm, 2.5*cm, 1.5*cm])
-pays_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E79')),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, 1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 3), (-1, 3), colors.white),
-    ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 5), (-1, 5), colors.white),
-    ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor('#F5F5F5')),
-    ('BACKGROUND', (0, 7), (-1, 7), colors.white),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 5),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-]))
-story.append(pays_table)
-story.append(Spacer(1, 0.5*cm))
+story.append(roadmap_table)
+story.append(Paragraph('Tableau 8 : Résumé de la roadmap d\'évolution', styles['Caption']))
 
 story.append(PageBreak())
 
-# ==================== 6. RECOMMANDATIONS ====================
-story.append(Paragraph("6. Recommandations", h1_style))
-
-story.append(Paragraph("6.1 Corrections Prioritaires", h2_style))
-story.append(Paragraph(
-    "Plusieurs points nécessitent une attention immédiate pour assurer le bon fonctionnement de l'application "
-    "en production. Premièrement, il est recommandé de vérifier que le proxy API Next.js communique correctement "
-    "avec le backend Express, particulièrement dans un environnement Docker où les URLs relatives doivent être "
-    "correctement résolues. Deuxièmement, les stores Zustand devraient être initialisés avec les données du "
-    "backend au chargement de l'application pour éviter les états vides.",
-    body_style
-))
-
-story.append(Paragraph("6.2 Améliorations Suggérées", h2_style))
-story.append(Paragraph(
-    "Pour améliorer l'expérience utilisateur, il serait bénéfique d'implémenter une validation côté client "
-    "plus robuste dans les formulaires, avec des messages d'erreur en français. L'ajout de notifications "
-    "toast pour les actions CRUD (succès/erreur) améliorerait le feedback utilisateur. Une pagination "
-    "côté serveur pour les grandes listes de données optimiserait les performances.",
-    body_style
-))
-
-story.append(Paragraph("6.3 Sécurité", h2_style))
-story.append(Paragraph(
-    "En termes de sécurité, il est recommandé d'implémenter une rotation des tokens JWT, d'ajouter une "
-    "protection CSRF pour les formulaires, et de logger les tentatives d'authentification échouées. "
-    "L'implémentation de 2FA (déjà présente dans le code) devrait être activée pour les comptes administrateurs. "
-    "Enfin, un audit de sécurité complet du code est conseillé avant la mise en production.",
-    body_style
-))
-
-story.append(Paragraph("6.4 Performance", h2_style))
-story.append(Paragraph(
-    "Pour optimiser les performances, il est recommandé d'implémenter le caching côté serveur avec Redis "
-    "pour les données fréquemment accédées, d'ajouter des index sur les colonnes de base de données "
-    "utilisées dans les requêtes de recherche, et d'optimiser les images et assets statiques. "
-    "L'utilisation de React Query pour la gestion du cache côté client améliorerait également la réactivité.",
-    body_style
-))
-
-# ==================== 7. CONCLUSION ====================
-story.append(Paragraph("7. Conclusion", h1_style))
+# ============================================================================
+# CONCLUSION
+# ============================================================================
+story.append(Paragraph('CONCLUSION', styles['H1']))
 
 story.append(Paragraph(
-    "Le projet GuinéaManager ERP présente une architecture solide et bien structurée, avec une séparation "
-    "claire des responsabilités entre frontend et backend. L'interface utilisateur est moderne, responsive "
-    "et cohérente grâce à l'utilisation de shadcn/ui. Le système d'authentification et les permissions "
-    "sont correctement implémentés, avec un support multi-pays bien pensé pour le marché ouest-africain.",
-    body_style
+    'GuinéaManager ERP présente une architecture solide et une couverture fonctionnelle remarquable pour '
+    'un système de gestion d\'entreprise. Les points forts identifiés - architecture moderne, couverture '
+    'complète, focus marché local, et UX professionnelle - constituent des fondations solides pour le '
+    'développement futur. Cependant, l\'audit a révélé plusieurs problèmes critiques nécessitant une '
+    'attention immédiate : méthodes API manquantes, erreur de syntaxe Prisma, migration non appliquée, '
+    'et intégration SMS gateway incomplète.',
+    styles['BodyJustify']
 ))
 
 story.append(Paragraph(
-    "L'application dispose de toutes les fonctionnalités essentielles d'un ERP moderne : gestion des clients, "
-    "produits, factures, employés, paie, et comptabilité. Les 16 pages frontend et les 25+ endpoints API "
-    "backend couvrent les besoins métier d'une PME typique. La configuration Docker permet un déploiement "
-    "simplifié et reproductible.",
-    body_style
+    'Les recommandations prioritaires sont les suivantes : corriger immédiatement l\'API client pour '
+    'rétablir la fonctionnalité des pages settings, CRM, et devises ; appliquer la migration Prisma '
+    'après correction de l\'erreur de syntaxe ; intégrer un SMS gateway pour activer le 2FA par SMS ; '
+    'et nettoyer le code de production (console.log, mocks, types any). La roadmap proposée permet de '
+    'planifier ces corrections tout en continuant le développement de nouvelles fonctionnalités.',
+    styles['BodyJustify']
 ))
 
 story.append(Paragraph(
-    "Les recommandations formulées dans ce rapport visent à améliorer la robustesse, la sécurité et les "
-    "performances de l'application. Avec les corrections prioritaires appliquées, GuinéaManager ERP "
-    "est prêt pour une phase de tests utilisateurs et, après validation, pour une mise en production.",
-    body_style
+    'Avec un effort estimé de 6 mois suivant la roadmap proposée, GuinéaManager ERP peut atteindre un '
+    'niveau de qualité et de fonctionnalités adapté à une commercialisation sur le marché ouest-africain. '
+    'La priorisation des corrections et l\'approche incrémentale permettent de livrer de la valeur à '
+    'chaque phase tout en améliorant continuellement la qualité du produit.',
+    styles['BodyJustify']
 ))
 
-# Construction du document
+# Build PDF
 doc.build(story)
-
-print("✓ Rapport d'audit généré: /home/z/my-project/download/GuineaManager_Audit_Complet.pdf")
+print(f"PDF généré: {output_path}")
