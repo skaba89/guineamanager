@@ -1,7 +1,7 @@
 // Tests d'authentification pour GuinéaManager ERP
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../src/index';
+import prisma from '../src/utils/prisma';
 
 describe('Authentification', () => {
   const testUser = {
@@ -50,8 +50,7 @@ describe('Authentification', () => {
         const company = await tx.company.create({
           data: {
             nom: testUser.companyName,
-            email: testUser.email,
-            plan: 'FREE'
+            email: testUser.email
           }
         });
 
@@ -81,7 +80,7 @@ describe('Authentification', () => {
       
       await prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { nom: testUser.companyName, email: testUser.email, plan: 'FREE' }
+          data: { nom: testUser.companyName, email: testUser.email, planId: 'free' }
         });
         await tx.user.create({
           data: {
@@ -127,7 +126,7 @@ describe('Authentification', () => {
       
       const result = await prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { nom: testUser.companyName, email: testUser.email, plan: 'FREE' }
+          data: { nom: testUser.companyName, email: testUser.email, planId: 'free' }
         });
         const user = await tx.user.create({
           data: {
@@ -152,7 +151,7 @@ describe('Authentification', () => {
       
       const result = await prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { nom: testUser.companyName, email: testUser.email, plan: 'FREE' }
+          data: { nom: testUser.companyName, email: testUser.email, planId: 'free' }
         });
         const user = await tx.user.create({
           data: {
@@ -178,7 +177,7 @@ describe('Authentification', () => {
       
       const user = await prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { nom: testUser.companyName, email: testUser.email, plan: 'FREE' }
+          data: { nom: testUser.companyName, email: testUser.email, planId: 'free' }
         });
         return tx.user.create({
           data: {

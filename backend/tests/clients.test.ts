@@ -1,6 +1,6 @@
 // Tests du module Clients pour GuinéaManager ERP
 import { describe, it, expect, beforeEach } from 'vitest';
-import { prisma } from '../src/index';
+import prisma from '../src/utils/prisma';
 
 describe('Module Clients', () => {
   let companyId: string;
@@ -14,8 +14,7 @@ describe('Module Clients', () => {
       create: {
         id: 'test-company-clients',
         nom: 'Test Company Clients',
-        email: 'clients@test.com',
-        plan: 'STANDARD'
+        email: 'clients@test.com'
       }
     });
     companyId = company.id;

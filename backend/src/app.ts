@@ -137,14 +137,16 @@ app.use('/api/auth/2fa', auth2faRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Gestion des erreurs non capturées
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception', error);
-  process.exit(1);
-});
+// Gestion des erreurs non capturées (uniquement hors tests)
+if (process.env.NODE_ENV !== 'test') {
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception', error);
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection', { reason, promise });
-});
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', { reason, promise });
+  });
+}
 
 export default app;

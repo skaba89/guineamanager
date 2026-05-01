@@ -1,6 +1,6 @@
 // Tests du module Factures pour GuinéaManager ERP
 import { describe, it, expect, beforeEach } from 'vitest';
-import { prisma } from '../src/index';
+import prisma from '../src/utils/prisma';
 
 describe('Module Factures', () => {
   let companyId: string;
@@ -15,8 +15,8 @@ describe('Module Factures', () => {
       create: {
         id: 'test-company-factures',
         nom: 'Test Company Factures',
-        email: 'factures@test.com',
-        plan: 'STANDARD'
+        email: 'factures@test.com'
+        // planId optionnel
       }
     });
     companyId = company.id;

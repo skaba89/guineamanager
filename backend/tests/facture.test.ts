@@ -21,18 +21,18 @@ describe('Factures', () => {
     
     testCompany = await prisma.company.create({
       data: {
-        name: 'Test Facture Company',
-        plan: 'STANDARD',
-        maxUsers: 5,
-        maxInvoices: -1,
+        nom: 'Test Facture Company',
+        email: 'facture-company@test.com',
       },
     });
 
     testUser = await prisma.user.create({
       data: {
         email: 'facture@test.com',
-        passwordHash,
-        role: 'OWNER',
+        password: passwordHash,
+        nom: 'Test',
+        prenom: 'User',
+        role: 'ADMIN',
         companyId: testCompany.id,
       },
     });
@@ -53,7 +53,7 @@ describe('Factures', () => {
         prixAchat: 50000, // 500 GNF en centimes
         prixVente: 100000, // 1000 GNF en centimes
         stockActuel: 100,
-        stockAlerte: 10,
+        stockMin: 10,
         unite: 'unité',
         companyId: testCompany.id,
       },
