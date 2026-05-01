@@ -27,8 +27,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
-  DialogContent
+  DialogContent,
+  DialogTitle
 } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -196,6 +198,9 @@ export function Header({ currentPage = 'dashboard', onPageChange }: HeaderProps)
       {/* Command Palette Dialog */}
       <Dialog open={commandOpen} onOpenChange={setCommandOpen}>
         <DialogContent className="p-0 gap-0 max-w-xl top-[10%] translate-y-0">
+          <VisuallyHidden.Root>
+            <DialogTitle>Palette de commandes - Recherche</DialogTitle>
+          </VisuallyHidden.Root>
           {/* Search Input */}
           <div className="flex items-center border-b px-4">
             <Search className="w-5 h-5 text-slate-400 mr-3" />
