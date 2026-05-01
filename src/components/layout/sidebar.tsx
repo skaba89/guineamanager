@@ -22,7 +22,9 @@ import {
   Menu,
   X,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Brain,
+  Wand2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/auth-store';
@@ -36,6 +38,8 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, color: 'text-emerald-500' },
+  { id: 'ai-dashboard', label: 'Tableau de Bord IA', icon: Brain, color: 'text-purple-500', badge: 'IA' },
+  { id: 'ai-assistant', label: 'Assistant IA', icon: Wand2, color: 'text-pink-500', badge: 'Nouveau' },
   { id: 'clients', label: 'Clients', icon: Users, color: 'text-blue-500' },
   { id: 'produits', label: 'Produits', icon: Package, color: 'text-purple-500' },
   { id: 'factures', label: 'Factures', icon: FileText, color: 'text-emerald-500' },
@@ -187,7 +191,12 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                 )}>
                   {item.label}
                 </span>
-                {isActive && !isCollapsed && (
+                {item.badge && !isCollapsed && (
+                  <Badge variant="secondary" className="ml-auto text-xs bg-purple-600/20 text-purple-300 border-purple-500/30">
+                    {item.badge}
+                  </Badge>
+                )}
+                {isActive && !isCollapsed && !item.badge && (
                   <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />
                 )}
               </button>

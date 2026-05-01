@@ -8,11 +8,13 @@ import { RegisterPage } from '@/components/pages/register-page';
 import { DashboardPage } from '@/components/pages/dashboard-page';
 import { ClientsPage } from '@/components/pages/clients-page';
 import { ProduitsPage } from '@/components/pages/produits-page';
-import { FacturesPage } from '@/components/pages/factures-page';
-import { EmployesPage } from '@/components/pages/employes-page';
+import { FacturesEnhancedPage } from '@/components/pages/factures-enhanced-page';
+import { EmployesEnhancedPage } from '@/components/pages/employes-enhanced-page';
 import { PaiePage } from '@/components/pages/paie-page';
 import { DepensesPage } from '@/components/pages/depenses-page';
-import { RapportsPage } from '@/components/pages/rapports-page';
+import { RapportsAdvancedPage } from '@/components/pages/rapports-advanced-page';
+import { AIDashboardPage } from '@/components/pages/ai-dashboard-page';
+import { AIAssistantPage } from '@/components/pages/ai-assistant-page';
 import { SettingsPage } from '@/components/pages/settings-page';
 import { DevisPage } from '@/components/pages/devis-page';
 import { CommandesPage } from '@/components/pages/commandes-page';
@@ -21,10 +23,13 @@ import { FournisseursPage } from '@/components/pages/fournisseurs-page';
 import { ComptabilitePage } from '@/components/pages/comptabilite-page';
 import { CRMPage } from '@/components/pages/crm-page';
 import { DevisesPage } from '@/components/pages/devises-page';
+import { ChatWidget } from '@/components/chatbot/ChatWidget';
 import { useAppStore } from '@/stores/auth-store';
 
 const pageConfig: Record<string, { title: string; subtitle?: string }> = {
   dashboard: { title: 'Tableau de bord', subtitle: 'Vue d\'ensemble de votre activité' },
+  'ai-dashboard': { title: 'Tableau de Bord IA', subtitle: 'Analyses intelligentes et prédictions' },
+  'ai-assistant': { title: 'Assistant IA', subtitle: 'Outils intelligents pour votre gestion' },
   clients: { title: 'Clients', subtitle: 'Gestion de vos clients' },
   produits: { title: 'Produits', subtitle: 'Catalogue et stocks' },
   factures: { title: 'Factures', subtitle: 'Facturation et paiements' },
@@ -100,12 +105,16 @@ export default function Home() {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'ai-dashboard':
+        return <AIDashboardPage />;
+      case 'ai-assistant':
+        return <AIAssistantPage />;
       case 'clients':
         return <ClientsPage />;
       case 'produits':
         return <ProduitsPage />;
       case 'factures':
-        return <FacturesPage />;
+        return <FacturesEnhancedPage />;
       case 'devis':
         return <DevisPage />;
       case 'commandes':
@@ -117,7 +126,7 @@ export default function Home() {
       case 'crm':
         return <CRMPage />;
       case 'employes':
-        return <EmployesPage />;
+        return <EmployesEnhancedPage />;
       case 'paie':
         return <PaiePage />;
       case 'depenses':
@@ -127,7 +136,7 @@ export default function Home() {
       case 'devises':
         return <DevisesPage />;
       case 'rapports':
-        return <RapportsPage />;
+        return <RapportsAdvancedPage />;
       case 'settings':
         return <SettingsPage />;
       default:
@@ -136,19 +145,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
-      <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <Header 
-          title="" 
-          subtitle="" 
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {renderPage()}
-        </main>
+    <>
+      <div className="min-h-screen bg-slate-100 flex">
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+        <div className="flex-1 flex flex-col min-h-screen">
+          <Header 
+            title="" 
+            subtitle="" 
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+          <main className="flex-1 p-4 lg:p-6 overflow-auto">
+            {renderPage()}
+          </main>
+        </div>
       </div>
-    </div>
+      {/* Chatbot Widget with GLM-5 */}
+      <ChatWidget />
+    </>
   );
 }
