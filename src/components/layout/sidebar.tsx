@@ -26,7 +26,8 @@ import {
   Brain,
   Wand2,
   Smartphone,
-  Monitor
+  Monitor,
+  Map
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/auth-store';
@@ -40,6 +41,7 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, color: 'text-emerald-500' },
+  { id: 'map-dashboard', label: 'Carte Interactive', icon: Map, color: 'text-emerald-600', badge: 'KPIs' },
   { id: 'ai-predictive', label: 'IA Prédictive', icon: Brain, color: 'text-purple-500', badge: 'IA' },
   { id: 'ai-assistant', label: 'Assistant IA', icon: Wand2, color: 'text-pink-500', badge: 'Nouveau' },
   { id: 'pos', label: 'Point de Vente', icon: Monitor, color: 'text-indigo-500', badge: 'POS' },

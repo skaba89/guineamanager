@@ -29,11 +29,13 @@ import { MobileAppPage } from '@/components/pages/mobile-app-page';
 import { POSPage } from '@/components/pages/pos-page';
 import { AIPredictivePage } from '@/components/pages/ai-predictive-page';
 import { LogistiquePage } from '@/components/pages/logistique-page';
+import MapDashboardPage from '@/components/pages/map-dashboard-page';
 import { ChatWidget } from '@/components/chatbot/ChatWidget';
 import { useAppStore } from '@/stores/auth-store';
 
 const pageConfig: Record<string, { title: string; subtitle?: string }> = {
   dashboard: { title: 'Tableau de bord', subtitle: 'Vue d\'ensemble de votre activité' },
+  'map-dashboard': { title: 'Carte Interactive', subtitle: 'Couverture géographique et KPIs par pays' },
   'ai-dashboard': { title: 'Tableau de Bord IA', subtitle: 'Analyses intelligentes et prédictions' },
   'ai-predictive': { title: 'IA Prédictive', subtitle: 'Prévisions de trésorerie, risques et suggestions' },
   'ai-assistant': { title: 'Assistant IA', subtitle: 'Outils intelligents pour votre gestion' },
@@ -115,6 +117,8 @@ export default function Home() {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'map-dashboard':
+        return <MapDashboardPage />;
       case 'ai-dashboard':
         return <AIDashboardPage />;
       case 'ai-predictive':
