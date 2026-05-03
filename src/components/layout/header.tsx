@@ -25,6 +25,7 @@ import {
   ChevronDown,
   CornerDownLeft
 } from 'lucide-react';
+import { OfflineIndicator } from '@/components/offline';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -189,6 +190,9 @@ export function Header({ currentPage = 'dashboard', onPageChange }: HeaderProps)
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Actions rapides</span>
           </Button>
+
+          {/* Offline Status Indicator */}
+          <OfflineIndicator compact showPendingCount />
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">

@@ -644,6 +644,7 @@ model OrangeMoneyTransaction {
   currency      String    @default("GNF")
   customerPhone String
   customerName  String?
+  type          String?   @default("PAYMENT") // PAYMENT, TRANSFER_P2P, QRCODE
   status        String    @default("PENDING")
   errorMessage  String?
   metadata      String?
@@ -655,6 +656,27 @@ model OrangeMoneyTransaction {
   @@index([companyId])
   @@index([status])
   @@index([createdAt])
+  @@index([type])
+}
+
+model OrangeMoneyQRCode {
+  id           String    @id
+  companyId    String
+  merchantCode String
+  amount       Int
+  currency     String    @default("GNF")
+  description  String?
+  status       String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, CANCELLED
+  usedBy       String?
+  usedAt       DateTime?
+  expiresAt    DateTime
+  metadata     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model MtnMoneyAccount {
