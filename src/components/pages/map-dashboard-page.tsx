@@ -469,7 +469,7 @@ export default function MapDashboardPage() {
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setSelectedCountry(null)}>
-                ✕
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </CardHeader>

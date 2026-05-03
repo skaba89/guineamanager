@@ -96,7 +96,7 @@ const operateurs = [
     bgColor: 'bg-orange-50',
     textColor: 'text-orange-700',
     prefix: '62',
-    logo: '🟠'
+    logoColor: 'bg-orange-500'
   },
   { 
     value: 'MTN', 
@@ -105,7 +105,7 @@ const operateurs = [
     bgColor: 'bg-yellow-50',
     textColor: 'text-yellow-700',
     prefix: '66',
-    logo: '🟡'
+    logoColor: 'bg-yellow-400'
   },
   { 
     value: 'WAVE', 
@@ -114,7 +114,7 @@ const operateurs = [
     bgColor: 'bg-cyan-50',
     textColor: 'text-cyan-700',
     prefix: '62',
-    logo: '🔵'
+    logoColor: 'bg-cyan-500'
   },
 ];
 

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Building, User, Lock, Bell, Palette, Database, Save, CheckCircle, 
+import {
+  Building, User, Lock, Bell, Palette, Database, Save, CheckCircle,
   CreditCard, Globe, Users, AlertTriangle, RefreshCw, Check, Smartphone,
-  Shield, ShieldCheck, ShieldOff, QrCode, Key, SmartphoneNfc, Wallet
+  Shield, ShieldCheck, ShieldOff, QrCode, Key, SmartphoneNfc, Wallet, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -857,8 +857,8 @@ export function SettingsPage() {
                       <div className="space-y-1 text-xs mb-4">
                         <p>• Employés: {plan.maxEmployes === 'Illimité' || plan.maxEmployes === -1 ? 'Illimité' : plan.maxEmployes}</p>
                         <p>• Utilisateurs: {plan.maxUtilisateurs === 'Illimité' || plan.maxUtilisateurs === -1 ? 'Illimité' : plan.maxUtilisateurs}</p>
-                        <p>• {plan.rapportsAvances ? '✓' : '✗'} Rapports avancés</p>
-                        <p>• {plan.apiAccess ? '✓' : '✗'} API Access</p>
+                        <p className="flex items-center gap-1">• {plan.rapportsAvances ? <Check className="w-3 h-3 text-emerald-600" /> : <X className="w-3 h-3 text-slate-400" />} Rapports avancés</p>
+                        <p className="flex items-center gap-1">• {plan.apiAccess ? <Check className="w-3 h-3 text-emerald-600" /> : <X className="w-3 h-3 text-slate-400" />} API Access</p>
                       </div>
                       {currentPlan?.id !== plan.id && (
                         <Button 

@@ -20,7 +20,10 @@ import {
   BookOpen,
   X,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  ChevronUp,
+  ChevronDown,
+  CornerDownLeft
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -290,12 +293,12 @@ export function Header({ currentPage = 'dashboard', onPageChange }: HeaderProps)
           <div className="border-t px-4 py-2 flex items-center justify-between text-xs text-slate-400 bg-slate-50/50">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-white rounded border">↑</kbd>
-                <kbd className="px-1.5 py-0.5 bg-white rounded border">↓</kbd>
+                <kbd className="px-1.5 py-0.5 bg-white rounded border flex items-center"><ChevronUp className="w-3 h-3" /></kbd>
+                <kbd className="px-1.5 py-0.5 bg-white rounded border flex items-center"><ChevronDown className="w-3 h-3" /></kbd>
                 pour naviguer
               </span>
               <span className="hidden sm:flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-white rounded border">↵</kbd>
+                <kbd className="px-1.5 py-0.5 bg-white rounded border flex items-center"><CornerDownLeft className="w-3 h-3" /></kbd>
                 pour sélectionner
               </span>
             </div>
