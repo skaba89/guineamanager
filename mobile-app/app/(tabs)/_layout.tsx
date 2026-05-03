@@ -4,8 +4,8 @@
  */
 
 import { Tabs } from 'expo-router';
-import { View, Text } from 'react-native';
-import { Home, FileText, QrCode, Users, Settings } from 'lucide-react-native';
+import { Home, FileText, QrCode, Users, Settings, Package } from 'lucide-react-native';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 export default function TabsLayout() {
   return (
@@ -30,7 +30,7 @@ export default function TabsLayout() {
           height: 60,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '500',
         },
       }}
@@ -41,6 +41,7 @@ export default function TabsLayout() {
           title: 'Accueil',
           headerTitle: 'GuinéaManager',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          headerRight: () => <OfflineIndicator compact />,
         }}
       />
       <Tabs.Screen
@@ -57,6 +58,14 @@ export default function TabsLayout() {
           title: 'Scanner',
           headerTitle: 'Scanner QR Code',
           tabBarIcon: ({ color }) => <QrCode size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="products"
+        options={{
+          title: 'Produits',
+          headerTitle: 'Mes Produits',
+          tabBarIcon: ({ color }) => <Package size={24} color={color} />,
         }}
       />
       <Tabs.Screen
