@@ -15,7 +15,13 @@ export const createClient = async (
 ) => {
   const client = await prisma.client.create({
     data: {
-      ...data,
+      nom: data.nom,
+      email: data.email,
+      telephone: data.telephone,
+      adresse: data.adresse,
+      ville: data.ville,
+      pays: data.pays,
+      type: data.type?.toUpperCase() || 'PARTICULIER',
       companyId,
     },
   });
@@ -245,7 +251,7 @@ export const getClientsWithBalance = async (companyId: string) => {
     email: client.email,
     telephone: client.telephone,
     totalFactures: client._count.factures,
-    soldeDu: client.factures.reduce((sum, f) => sum + (f.montantTTC?.toNumber() || 0), 0),
+    soldeDu: client.factures.reduce((sum, f) => sum + (f.montantTTC || 0), 0),
   }));
 };
 
