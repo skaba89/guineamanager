@@ -210,3 +210,71 @@ export const getClientStats = async (companyId: string) => {
     topClients,
   };
 };
+
+/**
+ * Get clients with outstanding balance
+ */
+export const getClientsWithBalance = async (companyId: string) => {
+  const clients = await prisma.client.findMany({
+    where: {
+      companyId,
+      factures: {
+        some: {
+          statut: { in: ['envoyee', 'en_retard'] },
+        },
+      },
+    },
+    include: {
+      _count: {
+        select: { factures: true },
+      },
+      factures: {
+        where: {
+          statut: { in: ['envoyee', 'en_retard'] },
+        },
+        select: {
+          montantTTC: true,
+        },
+      },
+    },
+  });
+
+  return clients.map((client) => ({
+    id: client.id,
+    nom: client.nom,
+    email: client.email,
+    telephone: client.telephone,
+    totalFactures: client._count.factures,
+    soldeDu: client.factures.reduce((sum, f) => sum + (f.montantTTC?.toNumber() || 0), 0),
+  }));
+};
+
+/**
+ * Get invoices for a specific client
+ */
+export const getClientInvoices = async (companyId: string, clientId: string) => {
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, companyId },
+  });
+
+  if (!client) {
+    throw new NotFoundError('Client non trouvé');
+  }
+
+  const factures = await prisma.facture.findMany({
+    where: { clientId, companyId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      lignes: {
+        select: {
+          description: true,
+          quantite: true,
+          prixUnitaire: true,
+          tauxTVA: true,
+        },
+      },
+    },
+  });
+
+  return factures;
+};

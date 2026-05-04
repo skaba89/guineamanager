@@ -14,7 +14,7 @@ const createClientSchema = z.object({
   adresse: z.string().optional(),
   notes: z.string().optional(),
   pays: z.string().optional(),
-  type: z.enum(['PARTICULIER', 'ENTREPRISE']).optional(),
+  type: z.enum(['particulier', 'entreprise']).optional(),
 });
 
 const updateClientSchema = z.object({
@@ -40,7 +40,7 @@ export const createClient = asyncHandler(
       adresse: validated.adresse,
       notes: validated.notes,
       pays: validated.pays || 'Guinée',
-      type: validated.type || 'PARTICULIER',
+      type: validated.type || 'particulier',
     };
 
     const client = await clientService.createClient(companyId, data);
@@ -79,7 +79,7 @@ export const listClients = asyncHandler(
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 20,
       search: search as string,
-      type: type as 'PARTICULIER' | 'ENTREPRISE' | undefined,
+      type: type as 'particulier' | 'entreprise' | undefined,
     });
 
     res.json({
@@ -151,7 +151,7 @@ export const getClientsWithBalance = asyncHandler(
     const companyId = authReq.companyId!;
 
     // Return clients with outstanding balance
-    const clients = await clientService.getClientsWithBalance?.(companyId) || [];
+    const clients = await clientService.getClientsWithBalance(companyId);
 
     res.json({
       success: true,
@@ -168,7 +168,7 @@ export const getClientInvoices = asyncHandler(
     const { id } = req.params;
 
     // Return client invoices
-    const invoices = await clientService.getClientInvoices?.(companyId, id) || [];
+    const invoices = await clientService.getClientInvoices(companyId, id);
 
     res.json({
       success: true,

@@ -90,6 +90,7 @@ model Company {
   tickets                 SupportTicket[]
   transfertsStock         TransfertStock[]
   users                   User[]
+  modulesConfig           ModuleConfiguration[]
 
   @@index([pays])
   @@index([planId])
@@ -1374,4 +1375,17 @@ model EtapePipeline {
   pipeline    PipelineVente @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
 
   @@index([pipelineId])
+}
+
+model ModuleConfiguration {
+  id              String   @id @default(cuid())
+  companyId       String
+  moduleCode      String
+  enabled         Boolean  @default(true)
+  configuredAt    DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, moduleCode])
+  @@index([companyId])
 }
