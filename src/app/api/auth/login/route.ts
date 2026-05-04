@@ -53,18 +53,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    // Check demo credentials directly
-    if (email === 'demo@guineamanager.com' && password === 'demo123') {
-      return NextResponse.json({
-        success: true,
-        data: {
-          token: createToken(DEMO_USER),
-          user: DEMO_USER
-        }
-      }, { headers });
-    }
-
-    // Try backend for other users
+    // Try backend FIRST for all users (including demo)
     const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
     try {
@@ -80,6 +69,17 @@ export async function POST(request: NextRequest) {
       }
     } catch (e) {
       console.error('Backend error:', e);
+    }
+
+    // Fallback to demo credentials only if backend is unavailable
+    if (email === 'demo@guineamanager.com' && password === 'demo123') {
+      return NextResponse.json({
+        success: true,
+        data: {
+          token: createToken(DEMO_USER),
+          user: DEMO_USER
+        }
+      }, { headers });
     }
 
     return NextResponse.json({
