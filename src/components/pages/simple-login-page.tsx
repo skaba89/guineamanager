@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppStore } from '@/stores/auth-store';
 
 export function SimpleLoginPage() {
   const [email, setEmail] = useState('demo@guineamanager.com');
@@ -13,44 +14,24 @@ export function SimpleLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
+  
+  const { login } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    setDebugInfo('Starting login...');
 
     try {
-      setDebugInfo('Sending request to /api/auth/login');
+      const result = await login(email, password);
       
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      setDebugInfo(`Response status: ${response.status}`);
-
-      const data = await response.json();
-      setDebugInfo(`Response: ${JSON.stringify(data).substring(0, 200)}`);
-
-      if (data.success && data.data?.token) {
-        // Store token
-        localStorage.setItem('guineamanager-token', data.data.token);
-        setDebugInfo('Login successful! Redirecting...');
-        
-        // Force page reload to dashboard
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+      if (result.success) {
+        // Le store a déjà mis à jour isAuthenticated
+        // La page va se recharger automatiquement
       } else {
-        setError(data.message || 'Login failed');
+        setError(result.message || 'Échec de la connexion');
       }
     } catch (err: any) {
-      setDebugInfo(`Error: ${err.message}`);
       setError('Erreur de connexion au serveur');
     }
     
@@ -178,12 +159,6 @@ export function SimpleLoginPage() {
                   <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-start gap-2">
                     <span className="font-medium">Erreur:</span>
                     <span>{error}</span>
-                  </div>
-                )}
-
-                {debugInfo && (
-                  <div className="text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded-lg px-4 py-2 font-mono">
-                    {debugInfo}
                   </div>
                 )}
 
