@@ -26,16 +26,16 @@ export function SimpleLoginPage() {
       const result = await login(email, password);
       
       if (result.success) {
-        // Le store a déjà mis à jour isAuthenticated
-        // La page va se recharger automatiquement
+        // Force un rechargement complet de la page
+        window.location.href = '/';
       } else {
         setError(result.message || 'Échec de la connexion');
+        setIsLoading(false);
       }
     } catch (err: any) {
       setError('Erreur de connexion au serveur');
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const features = [
