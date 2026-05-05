@@ -582,7 +582,9 @@ export const useAppStore = create<AppState>()(
     {
       name: 'guineamanager-storage',
       partialize: (state) => ({
-        // Only persist minimal auth state
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        company: state.company,
       })
     }
   )
