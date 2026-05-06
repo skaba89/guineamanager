@@ -4,7 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { z } from 'zod';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Only load .env file in development (in production, env vars are set by Docker)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+}
 
 // Schema de validation de la configuration
 const configSchema = z.object({
