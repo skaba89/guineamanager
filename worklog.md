@@ -472,3 +472,43 @@ Stage Summary:
 - Reporting avancé avec 5 types de rapports et graphiques
 - Modèles DB ajoutés : ApiKey, Webhook, WebhookLog, Partner, PartnerClient, PartnerCommission
 - Phase 4 Croissance terminée avec succès
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Phase 4 - Croissance : API Publique, Intégrations Bancaires, Mobile App, Expansion Régionale
+
+Work Log:
+- Corrigé les 2 tests en échec (regex téléphone + calcul IPR)
+- Créé le service de gestion des clés API (api-key.service.ts)
+- Implémenté le rate limiting pour l'API publique
+- Créé les routes de l'API publique v1 (factures, clients, produits, paiements, webhooks)
+- Développé le SDK JavaScript/TypeScript officiel (@guineamanager/sdk)
+- Ajouté les modèles ApiKey, ApiUsageLog au schéma Prisma
+- Créé le service d'intégration bancaire pour 6 banques guinéennes
+- Ajouté les modèles bancaires : CompteBancaire, BankCredential, VirementBancaire, TransactionBancaire
+- Créé l'architecture de l'application mobile (React Native/Expo)
+- Développé le client API mobile avec support offline
+- Créé le store d'authentification Zustand pour mobile
+- Implémenté la configuration régionale pour 4 pays (GN, SN, ML, CI)
+- Ajouté le support pour les opérateurs Mobile Money de chaque pays
+- Configuré les paramètres fiscaux et de paie par pays
+
+Stage Summary:
+- API Publique : Gateway complet avec rate limiting, permissions, SDK
+- Intégrations Bancaires : 6 banques guinéennes supportées (BSG, BICIGUI, SGBG, BPG, ECOBANK, ORABANK)
+- Mobile App : Architecture Expo prête avec services, stores et configuration
+- Expansion Régionale : Sénégal, Mali, Côte d'Ivoire configurés
+- Tests : 198/224 passent (88%)
+
+Fichiers créés:
+- backend/src/services/api-gateway/api-key.service.ts
+- backend/src/middlewares/api-gateway/rate-limiter.ts
+- backend/src/routes/public-api-enhanced.routes.ts
+- backend/public-api-sdk/index.ts
+- backend/src/services/banking/bank-integration.service.ts
+- backend/src/routes/banking.routes.ts
+- backend/src/config/regional.config.ts
+- mobile-app/package.json, app.json
+- mobile-app/src/services/api.ts
+- mobile-app/src/stores/authStore.ts

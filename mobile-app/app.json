@@ -1,71 +1,87 @@
 {
   "expo": {
     "name": "GuinéaManager",
-    "slug": "guineamanager-mobile",
+    "slug": "guineamanager",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "guineamanager",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#059669"
+      "backgroundColor": "#1E40AF"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.guineamanager.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "GuinéaManager utilise la caméra pour scanner les QR codes de paiement.",
-        "NSFaceIDUsageDescription": "GuinéaManager utilise Face ID pour sécuriser votre compte."
+        "NSCameraUsageDescription": "GuinéaManager a besoin d'accéder à votre appareil photo pour scanner des documents et des codes QR.",
+        "NSFaceIDUsageDescription": "GuinéaManager utilise Face ID pour sécuriser votre compte.",
+        "UIBackgroundModes": ["remote-notification"]
       },
-      "associatedDomains": [
-        "applinks:guineamanager.com"
-      ]
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": ""
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#059669"
+        "backgroundColor": "#1E40AF"
       },
       "package": "com.guineamanager.app",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.INTERNET",
-        "android.permission.VIBRATE",
-        "android.permission.USE_BIOMETRIC"
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "CAMERA",
+        "USE_BIOMETRIC"
       ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "guineamanager"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/favicon.png"
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "GuinéaManager",
+      "shortName": "GuinéaManager",
+      "description": "ERP Mobile pour PME guinéennes",
+      "themeColor": "#1E40AF",
+      "backgroundColor": "#FFFFFF",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "icons": [
+        {
+          "src": "./assets/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "./assets/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-camera",
       "expo-local-authentication",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#059669"
+          "sounds": []
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "GuinéaManager a besoin d'accéder à votre appareil photo pour scanner des documents."
         }
       ]
     ],
@@ -79,6 +95,12 @@
       "eas": {
         "projectId": "guineamanager-mobile"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/guineamanager-mobile"
     }
   }
 }

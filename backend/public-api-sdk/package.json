@@ -1,0 +1,48 @@
+{
+  "name": "@guineamanager/sdk",
+  "version": "1.0.0",
+  "description": "SDK JavaScript/TypeScript officiel pour l'API GuinéaManager",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": [
+    "guineamanager",
+    "erp",
+    "api",
+    "sdk",
+    "guinea",
+    "africa",
+    "saas",
+    "invoice",
+    "accounting"
+  ],
+  "author": "GuinéaManager Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guineamanager/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/guineamanager/sdk/issues"
+  },
+  "homepage": "https://docs.guineamanager.com/sdk",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

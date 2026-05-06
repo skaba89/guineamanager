@@ -1467,6 +1467,24 @@ model WebhookLog {
   @@index([createdAt])
 }
 
+model ApiUsageLog {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int      // en millisecondes
+  ipAddress    String?
+  userAgent    String?
+  error        String?
+  createdAt    DateTime @default(now())
+
+  @@index([apiKeyId])
+  @@index([endpoint])
+  @@index([createdAt])
+  @@index([statusCode])
+}
+
 model Partner {
   id              String    @id @default(cuid())
   code            String    @unique
@@ -1527,4 +1545,95 @@ model PartnerCommission {
 
   @@index([partnerId])
   @@index([status])
+}
+
+// ============================================
+// BANKING INTEGRATION MODELS
+// ============================================
+
+model CompteBancaire {
+  id                String    @id @default(cuid())
+  companyId         String
+  bankCode          String    // BSG, BICIGUI, SGBG, BPG, ECOBANK, ORABANK
+  accountNumber     String
+  accountName       String
+  currency          String    @default("GNF")
+  type              String    @default("CHECKING") // CHECKING, SAVINGS, BUSINESS
+  iban              String?
+  bic               String?
+  soldeActuel       Int?
+  soldeDisponible   Int?
+  derniereSynchro   DateTime?
+  actif             Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([companyId, accountNumber])
+  @@index([companyId])
+  @@index([bankCode])
+}
+
+model BankCredential {
+  id            String   @id @default(cuid())
+  companyId     String
+  bankCode      String
+  clientId      String
+  clientSecret  String   // TODO: Encrypt in production
+  merchantId    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, bankCode])
+  @@index([companyId])
+}
+
+model VirementBancaire {
+  id              String    @id @default(cuid())
+  companyId       String
+  fromAccountId   String
+  toAccount       String
+  toBank          String?
+  amount          Int
+  currency        String    @default("GNF")
+  reference       String
+  description     String?
+  beneficiaryName String?
+  transactionId   String?   @unique
+  status          String    @default("PENDING")
+  scheduledAt     DateTime?
+  processedAt     DateTime?
+  error           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([fromAccountId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+model TransactionBancaire {
+  id              String    @id @default(cuid())
+  companyId       String
+  compteBancaireId String
+  reference       String
+  type            String    // CREDIT, DEBIT
+  amount          Int
+  currency        String    @default("GNF")
+  description     String?
+  dateTransaction DateTime
+  dateValeur      DateTime?
+  contrepartie    String?
+  compteContrepartie String?
+  categorie       String?
+  status          String    @default("COMPLETED")
+  reconcilie      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  @@unique([compteBancaireId, reference])
+  @@index([companyId])
+  @@index([compteBancaireId])
+  @@index([dateTransaction])
+  @@index([reconcilie])
 }

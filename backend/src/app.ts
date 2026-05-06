@@ -49,7 +49,7 @@ import auth2faRoutes from './routes/auth-2fa.routes';
 import modulesRoutes from './routes/modules.routes';
 import inventairesRoutes from './routes/inventaires.routes';
 import betaRoutes from './routes/beta.routes';
-import publicApiRoutes from './routes/public-api.routes';
+import publicApiRoutes from './routes/public-api-enhanced.routes';
 import partnersRoutes from './routes/partners.routes';
 import reportsRoutes from './routes/reports.routes';
 
