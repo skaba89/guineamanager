@@ -4,11 +4,49 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import * as stockService from '../services/stock.service';
+import { prisma } from '../index';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authMiddleware);
+
+// ============================================================
+// STOCK OVERVIEW
+// ============================================================
+
+// GET /api/stock - Get stock overview
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const companyId = req.user!.companyId;
+    
+    // Get stock summary
+    const produits = await stockService.getLowStockProducts(companyId);
+    const alerts = await stockService.getStockAlerts(companyId);
+    
+    // Get total products count
+    const totalProduits = await prisma.produit.count({
+      where: { companyId, type: 'PRODUIT' }
+    });
+    
+    const produitsStockBas = produits.length;
+    const totalAlertes = alerts.length;
+    
+    res.json({
+      success: true,
+      data: {
+        totalProduits,
+        produitsStockBas,
+        totalAlertes,
+        alertes: alerts.slice(0, 5), // Last 5 alerts
+        produitsBasStock: produits.slice(0, 5), // Last 5 low stock products
+      }
+    });
+  } catch (error) {
+    console.error('Get stock overview error:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
 
 // ============================================================
 // STOCK ALERTS

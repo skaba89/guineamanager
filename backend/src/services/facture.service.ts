@@ -393,9 +393,58 @@ export const sendFacture = async (companyId: string, userId: string, factureId: 
  */
 export const generatePdf = async (companyId: string, factureId: string) => {
   const facture = await getFactureById(companyId, factureId);
-  // TODO: Implement PDF generation
-  const pdfContent = `Facture ${facture.numero}`;
-  return Buffer.from(pdfContent);
+  
+  // Get company info
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+  });
+  
+  if (!company) {
+    throw new NotFoundError('Entreprise non trouvée');
+  }
+  
+  // Use the PDF generator
+  const { generateInvoicePDF } = await import('../utils/pdf-generator');
+  
+  const pdfBuffer = await generateInvoicePDF({
+    numero: facture.numero,
+    dateEmission: facture.dateEmission,
+    dateEcheance: facture.dateEcheance,
+    statut: facture.statut,
+    modePaiement: facture.modePaiement || undefined,
+    notes: facture.notes || undefined,
+    montantHT: facture.montantHT,
+    montantTVA: facture.montantTVA,
+    montantTTC: facture.montantTTC,
+    client: {
+      nom: facture.client.nom,
+      email: facture.client.email || undefined,
+      telephone: facture.client.telephone || undefined,
+      adresse: facture.client.adresse || undefined,
+      ville: facture.client.ville || undefined,
+      pays: facture.client.pays || undefined
+    },
+    company: {
+      nom: company.nom,
+      email: company.email || undefined,
+      telephone: company.telephone || undefined,
+      adresse: company.adresse || undefined,
+      ville: company.ville || undefined,
+      pays: company.pays || undefined,
+      ninea: company.ninea || undefined
+    },
+    lignes: facture.lignes.map(l => ({
+      description: l.description,
+      quantite: l.quantite,
+      prixUnitaire: l.prixUnitaire,
+      tauxTVA: l.tauxTVA,
+      montantHT: l.montantHT,
+      montantTVA: l.montantTVA,
+      montantTTC: l.montantTTC
+    }))
+  });
+  
+  return pdfBuffer;
 };
 
 /**

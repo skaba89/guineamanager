@@ -8,6 +8,58 @@ const router = Router();
 router.use(authMiddleware);
 
 // ============================================================================
+// OVERVIEW
+// ============================================================================
+
+// GET /api/parametres - Get parameters overview
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: req.user!.companyId },
+      select: {
+        id: true,
+        nom: true,
+        pays: true,
+        codePays: true,
+        devise: true,
+        symboleDevise: true,
+        planId: true,
+      }
+    });
+
+    const parametres = await prisma.parametreSociete.count({
+      where: { companyId: req.user!.companyId }
+    });
+
+    const utilisateurs = await prisma.user.count({
+      where: { companyId: req.user!.companyId }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        societe: company,
+        statistiques: {
+          parametresPersonnalises: parametres,
+          utilisateurs,
+        },
+        endpoints: {
+          societe: '/api/parametres/societe',
+          fiscal: '/api/parametres/societe/fiscal',
+          custom: '/api/parametres/custom',
+          pays: '/api/parametres/pays',
+          utilisateurs: '/api/parametres/utilisateurs',
+          profil: '/api/parametres/profil',
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get parametres overview error:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+});
+
+// ============================================================================
 // INFORMATIONS SOCIÉTÉ
 // ============================================================================
 

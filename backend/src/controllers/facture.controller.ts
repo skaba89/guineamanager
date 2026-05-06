@@ -9,16 +9,19 @@ import { asyncHandler } from '../middlewares/errorHandler';
 // Schémas de validation
 const ligneFactureSchema = z.object({
   produitId: z.string().optional(),
-  designation: z.string().min(1, 'La désignation est requise'),
-  description: z.string().optional(),
+  description: z.string().min(1, 'La description est requise'),
+  designation: z.string().optional(), // Alias pour compatibilité
   quantite: z.number().int().positive('La quantité doit être positive'),
   prixUnitaire: z.number().int().min(0, 'Le prix unitaire doit être positif'),
+  tauxTVA: z.number().optional().default(18),
 });
 
 const createFactureSchema = z.object({
   clientId: z.string().min(1, 'Le client est requis'),
   date: z.string().datetime().optional(),
-  echeance: z.string().datetime().optional(),
+  dateEcheance: z.string().datetime().optional(),
+  echeance: z.string().datetime().optional(), // Alias
+  modePaiement: z.string().optional(),
   notes: z.string().optional(),
   conditions: z.string().optional(),
   lignes: z.array(ligneFactureSchema).min(1, 'Au moins une ligne est requise'),

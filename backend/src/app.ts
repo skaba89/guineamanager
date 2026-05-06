@@ -47,6 +47,7 @@ import parametresRoutes from './routes/parametres.routes';
 import plansRoutes from './routes/plans.routes';
 import auth2faRoutes from './routes/auth-2fa.routes';
 import modulesRoutes from './routes/modules.routes';
+import inventairesRoutes from './routes/inventaires.routes';
 
 // Créer l'application Express
 const app = express();
@@ -144,6 +145,7 @@ app.use('/api/parametres', parametresRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/auth/2fa', auth2faRoutes);
 app.use('/api/modules', modulesRoutes);
+app.use('/api/inventaires', inventairesRoutes);
 
 // Gestion des erreurs
 app.use(notFoundHandler);
