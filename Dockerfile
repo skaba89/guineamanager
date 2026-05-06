@@ -65,17 +65,7 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apk add --no-cache libc6-compat openssl curl sqlite
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN sed -i 's/\r$//' /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh && \
-    chown nextjs:nodejs /docker-entrypoint.sh
-
-# Copy built files from builder
+# Copy built files from builder (as root, before creating user)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
@@ -84,15 +74,24 @@ COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/prisma ./backend/prisma
 COPY --from=builder /app/backend/package.json ./backend/
 
-# Install production dependencies for backend (ensures all deps are present)
+# Generate Prisma client in production location
 WORKDIR /app/backend
-RUN npm install --omit=dev --no-audit --no-fund && \
-    npx prisma generate
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Create data and uploads directories
 WORKDIR /app
-RUN mkdir -p /app/data /app/uploads && \
+RUN mkdir -p /app/data /app/uploads
+
+# Create non-root user and set permissions
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh && \
+    chown nextjs:nodejs /docker-entrypoint.sh
 
 # Switch to non-root user
 USER nextjs
