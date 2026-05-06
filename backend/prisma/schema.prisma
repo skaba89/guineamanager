@@ -1415,3 +1415,116 @@ model BetaTester {
   @@index([status])
   @@index([createdAt])
 }
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  keyHash     String    @unique
+  keyPrefix   String
+  name        String
+  companyId   String
+  permissions String[]
+  rateLimit   Int       @default(1000)
+  lastUsed    DateTime?
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([keyHash])
+}
+
+model Webhook {
+  id            String    @id @default(cuid())
+  companyId     String
+  url           String
+  events        String[]
+  secret        String
+  active        Boolean   @default(true)
+  lastTriggered DateTime?
+  failureCount  Int       @default(0)
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([active])
+}
+
+model WebhookLog {
+  id          String   @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     String
+  response    String?
+  statusCode  Int?
+  success     Boolean  @default(false)
+  duration    Int?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+model Partner {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  nom             String
+  email           String    @unique
+  telephone       String
+  adresse         String?
+  ville           String?
+  pays            String    @default("Guinée")
+  type            String    @default("AFFILIATE") // RESELLER, AFFILIATE, INTEGRATOR
+  commission      Int       @default(15)
+  status          String    @default("EN_ATTENTE")
+  logo            String?
+  website         String?
+  description     String?
+  motivation      String?
+  clientsCount    Int       @default(0)
+  revenueTotal    Int       @default(0)
+  commissionTotal Int       @default(0)
+  approvedAt      DateTime?
+  suspendedAt     DateTime?
+  suspensionRaison String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  clients         PartnerClient[]
+  commissions     PartnerCommission[]
+
+  @@index([code])
+  @@index([email])
+  @@index([status])
+  @@index([type])
+}
+
+model PartnerClient {
+  id          String    @id @default(cuid())
+  partnerId   String
+  companyId   String
+  commission  Int       @default(15)
+  revenue     Int       @default(0)
+  createdAt   DateTime  @default(now())
+  partner     Partner   @relation(fields: [partnerId], references: [id])
+
+  @@unique([partnerId, companyId])
+  @@index([partnerId])
+  @@index([companyId])
+}
+
+model PartnerCommission {
+  id          String    @id @default(cuid())
+  partnerId   String
+  montant     Int
+  source      String?
+  reference   String?
+  status      String    @default("EN_ATTENTE")
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  partner     Partner   @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@index([status])
+}

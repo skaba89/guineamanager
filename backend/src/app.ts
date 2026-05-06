@@ -49,6 +49,9 @@ import auth2faRoutes from './routes/auth-2fa.routes';
 import modulesRoutes from './routes/modules.routes';
 import inventairesRoutes from './routes/inventaires.routes';
 import betaRoutes from './routes/beta.routes';
+import publicApiRoutes from './routes/public-api.routes';
+import partnersRoutes from './routes/partners.routes';
+import reportsRoutes from './routes/reports.routes';
 
 // Créer l'application Express
 const app = express();
@@ -148,6 +151,9 @@ app.use('/api/auth/2fa', auth2faRoutes);
 app.use('/api/modules', modulesRoutes);
 app.use('/api/inventaires', inventairesRoutes);
 app.use('/api/beta', betaRoutes);
+app.use('/api/public', publicApiRoutes);
+app.use('/api/partners', partnersRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Gestion des erreurs
 app.use(notFoundHandler);
