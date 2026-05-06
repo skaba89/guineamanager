@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Building, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,7 @@ import { formatGNF, formatDate } from '@/lib/mock-data';
 import { Client } from '@/types';
 
 export function ClientsPage() {
-  const { clients, addClient, updateClient, deleteClient } = useAppStore();
+  const { clients, fetchClients, addClient, updateClient, deleteClient } = useAppStore();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -59,6 +59,11 @@ export function ClientsPage() {
     pays: 'Guinée',
     type: 'PARTICULIER' as 'PARTICULIER' | 'ENTREPRISE'
   });
+
+  // Fetch clients on mount
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const filteredClients = clients.filter(c => 
     c.nom.toLowerCase().includes(search.toLowerCase()) ||

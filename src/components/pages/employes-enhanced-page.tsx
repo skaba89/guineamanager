@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, Users, User, Mail, Phone, Calendar, Briefcase,
   Building2, LayoutGrid, List, Network, Crown, UserCog, DollarSign, Eye
@@ -74,7 +74,7 @@ const hierarchy: Record<string, { level: number; icon: React.ElementType; color:
 };
 
 export function EmployesEnhancedPage() {
-  const { employes, addEmploye, updateEmploye, deleteEmploye } = useAppStore();
+  const { employes, fetchEmployes, addEmploye, updateEmploye, deleteEmploye } = useAppStore();
   const [search, setSearch] = useState('');
   const [filterDept, setFilterDept] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards' | 'org'>('table');
@@ -87,6 +87,11 @@ export function EmployesEnhancedPage() {
     dateNaissance: '', dateEmbauche: new Date().toISOString().split('T')[0],
     poste: '', departement: '', salaireBase: 0, typeContrat: 'CDI' as Employe['typeContrat']
   });
+
+  // Fetch employes on mount
+  useEffect(() => {
+    fetchEmployes();
+  }, [fetchEmployes]);
 
   const filteredEmployes = employes.filter(e => {
     const matchSearch = e.nom.toLowerCase().includes(search.toLowerCase()) ||

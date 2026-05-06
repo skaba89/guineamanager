@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, TrendingDown, CreditCard, Wallet, Receipt, Calendar, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +54,7 @@ const modesPaiement = [
 ];
 
 export function DepensesPage() {
-  const { depenses, addDepense, updateDepense, deleteDepense } = useAppStore();
+  const { depenses, fetchDepenses, addDepense, updateDepense, deleteDepense } = useAppStore();
   const [search, setSearch] = useState('');
   const [filterCategorie, setFilterCategorie] = useState<string>('all');
   const [filterMois, setFilterMois] = useState<string>('');
@@ -68,6 +68,11 @@ export function DepensesPage() {
     modePaiement: 'ESPECES' as Depense['modePaiement'],
     notes: ''
   });
+
+  // Fetch depenses on mount
+  useEffect(() => {
+    fetchDepenses();
+  }, [fetchDepenses]);
 
   const filteredDepenses = depenses.filter(d => {
     const matchSearch = d.description.toLowerCase().includes(search.toLowerCase());
