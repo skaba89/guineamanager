@@ -1389,3 +1389,29 @@ model ModuleConfiguration {
   @@unique([companyId, moduleCode])
   @@index([companyId])
 }
+
+model BetaTester {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  nom              String
+  prenom           String
+  entreprise       String?
+  telephone        String?
+  secteur          String?
+  tailleEntreprise String?
+  fonction         String?
+  besoins          String[]
+  source           String?
+  status           String    @default("EN_ATTENTE")
+  codeAcces        String?   @unique
+  activatedAt      DateTime?
+  feedbackSent     Boolean   @default(false)
+  feedbackDate     DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
