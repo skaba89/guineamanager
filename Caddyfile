@@ -33,11 +33,6 @@
                 write_timeout 300s
                 dial_timeout 30s
             }
-            # Headers
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
             # Buffer limits for large uploads
             flush_interval -1
         }
@@ -52,11 +47,6 @@
                 write_timeout 300s
                 dial_timeout 30s
             }
-            # Headers
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
         }
     }
     
@@ -68,7 +58,6 @@
         output file /var/log/caddy/access.log {
             roll_size 100mb
             roll_keep 10
-            roll_keep_days 30
         }
         format json
     }
