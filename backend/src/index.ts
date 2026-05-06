@@ -16,12 +16,84 @@ async function initializeDatabase() {
     if (userCount === 0) {
       console.log('🔧 First run detected - initializing database...');
       
-      // Create subscription plans
+      // Create subscription plans - Prix 2026
       const plans = [
-        { id: 'petite', nom: 'PETITE', description: 'Idéal pour les petites entreprises', prixMensuel: 0, prixAnnuel: 0, maxEmployes: 5, maxUtilisateurs: 2, maxClients: 50, maxProduits: 100, maxFacturesMois: 30, modules: 'facturation,clients,produits,dashboard', support: 'email', sauvegardeAuto: true, apiAccess: false, personnalisation: false, multiSociete: false, rapportsAvances: false },
-        { id: 'moyenne', nom: 'MOYENNE', description: 'Conçu pour les PME en croissance', prixMensuel: 50000_00, prixAnnuel: 500000_00, maxEmployes: 25, maxUtilisateurs: 5, maxClients: 200, maxProduits: 500, maxFacturesMois: 200, modules: 'facturation,clients,produits,employes,paie,depenses,rapports,dashboard', support: 'chat', sauvegardeAuto: true, apiAccess: true, personnalisation: true, multiSociete: false, rapportsAvances: true },
-        { id: 'grande', nom: 'GRANDE', description: 'Pour les entreprises établies', prixMensuel: 150000_00, prixAnnuel: 1500000_00, maxEmployes: 100, maxUtilisateurs: 15, maxClients: 1000, maxProduits: 2000, maxFacturesMois: 1000, modules: 'facturation,clients,produits,employes,paie,depenses,rapports,parametres,dashboard', support: 'phone', sauvegardeAuto: true, apiAccess: true, personnalisation: true, multiSociete: true, rapportsAvances: true },
-        { id: 'enterprise', nom: 'ENTERPRISE', description: 'Solution sur mesure', prixMensuel: 500000_00, prixAnnuel: 5000000_00, maxEmployes: -1, maxUtilisateurs: -1, maxClients: -1, maxProduits: -1, maxFacturesMois: -1, modules: 'all', support: 'dedicated', sauvegardeAuto: true, apiAccess: true, personnalisation: true, multiSociete: true, rapportsAvances: true }
+        { 
+          id: 'petite', 
+          nom: 'STARTER', 
+          description: 'Idéal pour les auto-entrepreneurs et petites activités', 
+          prixMensuel: 75_000, 
+          prixAnnuel: 750_000, 
+          maxEmployes: 3, 
+          maxUtilisateurs: 1, 
+          maxClients: 30, 
+          maxProduits: 50, 
+          maxFacturesMois: 20, 
+          modules: 'facturation,clients,produits,dashboard', 
+          support: 'email', 
+          sauvegardeAuto: true, 
+          apiAccess: false, 
+          personnalisation: false, 
+          multiSociete: false, 
+          rapportsAvances: false 
+        },
+        { 
+          id: 'moyenne', 
+          nom: 'BUSINESS', 
+          description: 'Pour les PME qui veulent grandir - Le plus populaire', 
+          prixMensuel: 250_000, 
+          prixAnnuel: 2_500_000, 
+          maxEmployes: 25, 
+          maxUtilisateurs: 5, 
+          maxClients: 500, 
+          maxProduits: 1000, 
+          maxFacturesMois: 300, 
+          modules: 'facturation,clients,produits,employes,paie,depenses,rapports,dashboard,devis,commandes,stock', 
+          support: 'chat', 
+          sauvegardeAuto: true, 
+          apiAccess: true, 
+          personnalisation: true, 
+          multiSociete: false, 
+          rapportsAvances: true 
+        },
+        { 
+          id: 'grande', 
+          nom: 'PREMIUM', 
+          description: 'Solution complète pour les entreprises établies', 
+          prixMensuel: 500_000, 
+          prixAnnuel: 5_000_000, 
+          maxEmployes: 100, 
+          maxUtilisateurs: 20, 
+          maxClients: 2000, 
+          maxProduits: 5000, 
+          maxFacturesMois: 1000, 
+          modules: 'facturation,clients,produits,employes,paie,depenses,rapports,parametres,dashboard,devis,commandes,stock,comptabilite,crm,mobile-money,fournisseurs', 
+          support: 'phone', 
+          sauvegardeAuto: true, 
+          apiAccess: true, 
+          personnalisation: true, 
+          multiSociete: true, 
+          rapportsAvances: true 
+        },
+        { 
+          id: 'enterprise', 
+          nom: 'ENTERPRISE', 
+          description: 'Solution sur mesure avec support dédié', 
+          prixMensuel: 1_200_000, 
+          prixAnnuel: 12_000_000, 
+          maxEmployes: -1, 
+          maxUtilisateurs: -1, 
+          maxClients: -1, 
+          maxProduits: -1, 
+          maxFacturesMois: -1, 
+          modules: 'all', 
+          support: 'dedicated', 
+          sauvegardeAuto: true, 
+          apiAccess: true, 
+          personnalisation: true, 
+          multiSociete: true, 
+          rapportsAvances: true 
+        }
       ];
 
       for (const plan of plans) {
