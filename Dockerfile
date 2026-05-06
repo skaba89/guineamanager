@@ -84,7 +84,13 @@ COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/prisma ./backend/prisma
 COPY --from=builder /app/backend/package.json ./backend/
 
+# Install production dependencies for backend (ensures all deps are present)
+WORKDIR /app/backend
+RUN npm install --omit=dev --no-audit --no-fund && \
+    npx prisma generate
+
 # Create data and uploads directories
+WORKDIR /app
 RUN mkdir -p /app/data /app/uploads && \
     chown -R nextjs:nodejs /app
 
