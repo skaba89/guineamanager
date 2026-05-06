@@ -74,14 +74,14 @@ export const createClientSchema = z.object({
   adresse: z.string().max(200).optional(),
   ville: z.string().max(100).optional(),
   pays: z.string().default('Guinée'),
-  type: z.enum(['particulier', 'entreprise']).default('particulier'),
+  type: z.enum(['particulier', 'entreprise', 'PARTICULIER', 'ENTREPRISE']).default('PARTICULIER'),
 });
 
 export const updateClientSchema = createClientSchema.partial();
 
 export const clientFilterSchema = paginationSchema.extend({
   search: z.string().optional(),
-  type: z.enum(['particulier', 'entreprise']).optional(),
+  type: z.enum(['particulier', 'entreprise', 'PARTICULIER', 'ENTREPRISE']).optional(),
 });
 
 // ============================================

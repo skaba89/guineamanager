@@ -12,9 +12,10 @@ const createClientSchema = z.object({
   telephone: z.string().optional(),
   email: z.string().email('Email invalide').optional().or(z.literal('')),
   adresse: z.string().optional(),
+  ville: z.string().optional(),
   notes: z.string().optional(),
   pays: z.string().optional(),
-  type: z.enum(['particulier', 'entreprise']).optional(),
+  type: z.enum(['particulier', 'entreprise', 'PARTICULIER', 'ENTREPRISE']).optional(),
 });
 
 const updateClientSchema = z.object({
@@ -22,6 +23,7 @@ const updateClientSchema = z.object({
   telephone: z.string().optional(),
   email: z.string().email('Email invalide').optional().or(z.literal('')),
   adresse: z.string().optional(),
+  ville: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -38,9 +40,10 @@ export const createClient = asyncHandler(
       telephone: validated.telephone,
       email: validated.email || undefined,
       adresse: validated.adresse,
+      ville: validated.ville,
       notes: validated.notes,
       pays: validated.pays || 'Guinée',
-      type: validated.type || 'particulier',
+      type: (validated.type || 'PARTICULIER').toUpperCase() as 'PARTICULIER' | 'ENTREPRISE',
     };
 
     const client = await clientService.createClient(companyId, data);
