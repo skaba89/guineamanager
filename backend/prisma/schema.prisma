@@ -1400,7 +1400,7 @@ model BetaTester {
   secteur          String?
   tailleEntreprise String?
   fonction         String?
-  besoins          String[]
+  besoins          String    @default("[]")  // JSON array stored as string
   source           String?
   status           String    @default("EN_ATTENTE")
   codeAcces        String?   @unique
@@ -1422,7 +1422,7 @@ model ApiKey {
   keyPrefix   String
   name        String
   companyId   String
-  permissions String[]
+  permissions String    @default("[]")  // JSON array stored as string
   rateLimit   Int       @default(1000)
   lastUsed    DateTime?
   expiresAt   DateTime?
@@ -1438,7 +1438,7 @@ model Webhook {
   id            String    @id @default(cuid())
   companyId     String
   url           String
-  events        String[]
+  events        String    @default("[]")  // JSON array stored as string
   secret        String
   active        Boolean   @default(true)
   lastTriggered DateTime?

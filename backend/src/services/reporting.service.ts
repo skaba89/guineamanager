@@ -1,6 +1,6 @@
 // Service de Reporting Avancé pour GuinéaManager
-import prisma from './prisma';
-import logger from './logger';
+import prisma from '../utils/prisma';
+import logger from '../utils/logger';
 
 export interface ReportConfig {
   type: 'revenue' | 'clients' | 'products' | 'expenses' | 'payroll' | 'cashflow' | 'profit';
