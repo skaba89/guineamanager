@@ -103,10 +103,10 @@
 
 | Plan | Prix | Employés | Utilisateurs | Fonctionnalités |
 |------|------|----------|--------------|-----------------|
-| **PETITE** | Gratuit | 5 | 2 | Facturation, Clients, Produits |
-| **MOYENNE** | 50 000 GNF/mois | 25 | 5 | Tout + Paie, Dépenses, Rapports |
-| **GRANDE** | 150 000 GNF/mois | 100 | 15 | Tout + Multi-société, API |
-| **ENTERPRISE** | Sur mesure | Illimité | Illimité | Tout + Support dédié |
+| **STARTER** | 75 000 GNF/mois | 5 | 2 | Facturation, Clients, Produits |
+| **BUSINESS** | 250 000 GNF/mois | 25 | 5 | Tout + Paie, Dépenses, Rapports, Mobile Money |
+| **PREMIUM** | 500 000 GNF/mois | 100 | 15 | Tout + Multi-société, API, CRM avancé |
+| **ENTERPRISE** | 1 200 000 GNF/mois | Illimité | Illimité | Tout + Support dédié, SLA, Formation |
 
 ---
 
