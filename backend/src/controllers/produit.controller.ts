@@ -17,7 +17,7 @@ const createProduitSchema = z.object({
   stockMin: z.coerce.number().int().min(0).optional().default(0),
   stockMax: z.coerce.number().int().min(0).optional().nullable(),
   categorie: z.string().optional().nullable(),
-  tva: z.coerce.number().min(0).max(1).optional().default(0.18),
+  tva: z.coerce.number().min(0).max(100).optional().default(18),
   type: z.enum(['PRODUIT', 'SERVICE']).optional().default('PRODUIT'),
 });
 
@@ -31,7 +31,7 @@ const updateProduitSchema = z.object({
   stockMin: z.coerce.number().int().min(0).optional(),
   stockMax: z.coerce.number().int().min(0).optional().nullable(),
   categorie: z.string().optional().nullable(),
-  tva: z.coerce.number().min(0).max(1).optional(),
+  tva: z.coerce.number().min(0).max(100).optional(),
   type: z.enum(['PRODUIT', 'SERVICE']).optional(),
 });
 

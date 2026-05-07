@@ -22,7 +22,7 @@ export const createProduit = async (
       stockMin: data.stockMin ?? 0,
       categorie: data.categorie,
       type: data.type ?? 'PRODUIT',
-      tva: data.tva ?? 0.18,
+      tva: data.tva ?? 18,
       reference: data.reference,
       actif: data.actif ?? true,
       company: {

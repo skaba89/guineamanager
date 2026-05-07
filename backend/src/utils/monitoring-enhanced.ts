@@ -120,11 +120,11 @@ async function getMetrics(): Promise<SystemMetrics> {
       }),
       prisma.facture.aggregate({
         where: { createdAt: { gte: today } },
-        _sum: { total: true }
+        _sum: { montantTTC: true }
       }),
       prisma.facture.aggregate({
         where: { createdAt: { gte: firstDayOfMonth } },
-        _sum: { total: true }
+        _sum: { montantTTC: true }
       })
     ]);
 
@@ -134,8 +134,8 @@ async function getMetrics(): Promise<SystemMetrics> {
       totalClients,
       totalFactures,
       facturesToday,
-      caToday: caToday._sum.total || 0,
-      caMonth: caMonth._sum.total || 0
+      caToday: caToday._sum.montantTTC || 0,
+      caMonth: caMonth._sum.montantTTC || 0
     };
   } catch (error) {
     logger.error('Erreur lors de la récupération des métriques', error);

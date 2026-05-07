@@ -79,11 +79,11 @@ const typesProduit = [
   { value: 'SERVICE', label: 'Service' },
 ];
 
-// TVA rates for West Africa
+// TVA rates for West Africa (percentages to match backend schema)
 const tvaRates = [
   { value: 0, label: '0%' },
-  { value: 0.18, label: '18% (Standard)' },
-  { value: 0.09, label: '9% (Réduit)' },
+  { value: 18, label: '18% (Standard)' },
+  { value: 9, label: '9% (Réduit)' },
 ];
 
 export function ProduitsPage() {
@@ -191,7 +191,7 @@ export function ProduitsPage() {
       stockActuel: 0,
       stockMin: 0,
       categorie: '',
-      tva: 0.18,
+      tva: 18,
       type: 'PRODUIT',
       reference: '',
     });
@@ -208,7 +208,7 @@ export function ProduitsPage() {
       stockActuel: produit.stockActuel,
       stockMin: produit.stockMin,
       categorie: produit.categorie || '',
-      tva: produit.tva || 0.18,
+      tva: produit.tva || 18,
       type: produit.type || 'PRODUIT',
       reference: produit.reference || '',
     });
@@ -242,9 +242,9 @@ export function ProduitsPage() {
     return { label: 'OK', color: 'success' };
   };
 
-  // Calculer le prix TTC
+  // Calculer le prix TTC (tva en pourcentage: 18 pour 18%)
   const getPrixTTC = (prixHT: number, tva: number) => {
-    return Math.round(prixHT * (1 + tva));
+    return Math.round(prixHT * (1 + tva / 100));
   };
 
   return (
@@ -577,7 +577,7 @@ export function ProduitsPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                HT: {formatGNF(formData.prixUnitaire)} + TVA ({(formData.tva * 100).toFixed(0)}%): {formatGNF(Math.round(formData.prixUnitaire * formData.tva))}
+                HT: {formatGNF(formData.prixUnitaire)} + TVA ({formData.tva}%): {formatGNF(Math.round(formData.prixUnitaire * formData.tva / 100))}
               </p>
             </div>
 

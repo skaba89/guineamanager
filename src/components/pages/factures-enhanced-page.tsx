@@ -197,6 +197,21 @@ export function FacturesEnhancedPage() {
   };
 
   const handleProduitSelect = (index: number, produitId: string) => {
+    // Si l'utilisateur choisit "Saisie libre", on réinitialise produitId
+    if (produitId === '__none__') {
+      const newLignes = [...formData.lignes];
+      newLignes[index] = {
+        ...newLignes[index],
+        produitId: undefined,
+        description: '',
+        prixUnitaire: 0,
+        tauxTVA: 18,
+        modeSaisie: 'HT',
+      };
+      setFormData({ ...formData, lignes: newLignes });
+      return;
+    }
+
     const produit = produits.find(p => p.id === produitId);
     if (produit) {
       const newLignes = [...formData.lignes];
@@ -540,14 +555,14 @@ export function FacturesEnhancedPage() {
                           <TableCell>
                             <div className="space-y-1">
                               <Select
-                                value={ligne.produitId || ''}
+                                value={ligne.produitId || '__none__'}
                                 onValueChange={(value) => handleProduitSelect(index, value)}
                               >
                                 <SelectTrigger className="h-8">
                                   <SelectValue placeholder="Choisir un produit..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">-- Saisie libre --</SelectItem>
+                                  <SelectItem value="__none__">-- Saisie libre --</SelectItem>
                                   {produits.map(p => (
                                     <SelectItem key={p.id} value={p.id}>
                                       {p.nom} - {formatGNF(p.prixUnitaire)}

@@ -229,14 +229,14 @@ export interface CalculPaie {
 // ============================================================================
 
 export interface DashboardStats {
-  caMois: number;
-  caAnnee: number;
+  chiffreAffaires: number;
   facturesEnAttente: number;
-  facturesEnRetard: number;
-  clientsActifs: number;
-  produitsStockBas: number;
-  masseSalarialeMois: number;
-  depensesMois: number;
+  facturesPayees: number;
+  depensesTotales: number;
+  nombreClients: number;
+  nombreEmployes: number;
+  salairesAPayer: number;
+  beneficeNet: number;
 }
 
 export interface MonthlyStats {

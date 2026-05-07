@@ -99,7 +99,7 @@ export const createProduitSchema = z.object({
   stockMax: z.number().int().nonnegative().optional(),
   categorie: z.string().max(100).optional(),
   type: z.enum(['PRODUIT', 'SERVICE']).default('PRODUIT'),
-  tva: z.number().nonnegative().max(1).default(0.18),
+  tva: z.number().nonnegative().max(100).default(18),
   actif: z.boolean().default(true),
 });
 

@@ -80,6 +80,7 @@ model Company {
   journauxComptables      JournalComptable[]
   lignesBilan             LigneBilan[]
   lignesCompteResultat    LigneCompteResultat[]
+  modulesConfig           ModuleConfiguration[]
   opportunites            Opportunite[]
   paiementsAbonnement     PaiementAbonnement[]
   parametres              ParametreSociete[]
@@ -90,7 +91,6 @@ model Company {
   tickets                 SupportTicket[]
   transfertsStock         TransfertStock[]
   users                   User[]
-  modulesConfig           ModuleConfiguration[]
 
   @@index([pays])
   @@index([planId])
@@ -238,8 +238,8 @@ model Facture {
   companyId    String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  company      Company        @relation(fields: [companyId], references: [id])
   client       Client         @relation(fields: [clientId], references: [id])
+  company      Company        @relation(fields: [companyId], references: [id])
   lignes       LigneFacture[]
   paiements    Paiement[]
 
@@ -260,8 +260,8 @@ model LigneFacture {
   montantHT    Int
   montantTVA   Int
   montantTTC   Int
-  produit      Produit? @relation(fields: [produitId], references: [id])
   facture      Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  produit      Produit? @relation(fields: [produitId], references: [id])
 
   @@index([factureId])
   @@index([produitId])
@@ -377,8 +377,8 @@ model BulletinPaie {
   companyId             String
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-  company               Company   @relation(fields: [companyId], references: [id])
   employe               Employe   @relation(fields: [employeId], references: [id])
+  company               Company   @relation(fields: [companyId], references: [id])
 
   @@unique([employeId, mois, annee])
   @@index([companyId])
@@ -518,8 +518,8 @@ model SupportTicket {
   updatedAt     DateTime        @updatedAt
   resoluAt      DateTime?
   fermeAt       DateTime?
-  assignee      User?           @relation("AssignedTickets", fields: [assigneeId], references: [id])
   company       Company         @relation(fields: [companyId], references: [id])
+  assignee      User?           @relation("AssignedTickets", fields: [assigneeId], references: [id])
   reponses      TicketReponse[]
 
   @@index([userId])
@@ -582,9 +582,9 @@ model Devis {
   opportuniteId String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  opportunite   Opportunite? @relation(fields: [opportuniteId], references: [id])
-  company       Company      @relation(fields: [companyId], references: [id])
   client        Client       @relation(fields: [clientId], references: [id])
+  company       Company      @relation(fields: [companyId], references: [id])
+  opportunite   Opportunite? @relation(fields: [opportuniteId], references: [id])
   lignes        LigneDevis[]
 
   @@unique([numero, companyId])
@@ -603,8 +603,8 @@ model LigneDevis {
   montantHT    Int
   montantTVA   Int
   montantTTC   Int
-  produit      Produit? @relation(fields: [produitId], references: [id])
   devis        Devis    @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  produit      Produit? @relation(fields: [produitId], references: [id])
 
   @@index([devisId])
 }
@@ -645,7 +645,7 @@ model OrangeMoneyTransaction {
   currency      String    @default("GNF")
   customerPhone String
   customerName  String?
-  type          String?   @default("PAYMENT") // PAYMENT, TRANSFER_P2P, QRCODE
+  type          String?   @default("PAYMENT")
   status        String    @default("PENDING")
   errorMessage  String?
   metadata      String?
@@ -667,7 +667,7 @@ model OrangeMoneyQRCode {
   amount       Int
   currency     String    @default("GNF")
   description  String?
-  status       String    @default("ACTIVE") // ACTIVE, USED, EXPIRED, CANCELLED
+  status       String    @default("ACTIVE")
   usedBy       String?
   usedAt       DateTime?
   expiresAt    DateTime
@@ -681,35 +681,35 @@ model OrangeMoneyQRCode {
 }
 
 model MtnMoneyAccount {
-  id               String   @id @default(cuid())
-  companyId        String
-  subscriptionKey  String
-  disbursementKey  String?
-  accountNumber    String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  companyId       String
+  subscriptionKey String
+  disbursementKey String?
+  accountNumber   String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([companyId])
 }
 
 model MtnMoneyTransaction {
-  id                    String    @id @default(cuid())
-  companyId             String
-  externalId            String    @unique
-  reference             String?
+  id                     String    @id @default(cuid())
+  companyId              String
+  externalId             String    @unique
+  reference              String?
   financialTransactionId String?
-  amount                Int
-  currency              String    @default("GNF")
-  customerPhone         String
-  customerName          String?
-  type                  String    @default("COLLECTION")
-  status                String    @default("PENDING")
-  errorMessage          String?
-  metadata              String?
-  completedAt           DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  amount                 Int
+  currency               String    @default("GNF")
+  customerPhone          String
+  customerName           String?
+  type                   String    @default("COLLECTION")
+  status                 String    @default("PENDING")
+  errorMessage           String?
+  metadata               String?
+  completedAt            DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   @@index([companyId])
   @@index([status])
@@ -786,8 +786,8 @@ model Entrepot {
   updatedAt        DateTime         @updatedAt
   company          Company          @relation(fields: [companyId], references: [id])
   stocks           StockEntrepot[]
-  transfertsDest   TransfertStock[] @relation("TransfertDest")
   transfertsSource TransfertStock[] @relation("TransfertSource")
+  transfertsDest   TransfertStock[] @relation("TransfertDest")
 
   @@unique([nom, companyId])
   @@index([companyId])
@@ -802,8 +802,8 @@ model StockEntrepot {
   companyId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  produit     Produit  @relation(fields: [produitId], references: [id], onDelete: Cascade)
   entrepot    Entrepot @relation(fields: [entrepotId], references: [id], onDelete: Cascade)
+  produit     Produit  @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([entrepotId, produitId])
   @@index([produitId])
@@ -822,9 +822,9 @@ model TransfertStock {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   lignes           LigneTransfert[]
-  company          Company          @relation(fields: [companyId], references: [id])
-  entrepotDest     Entrepot         @relation("TransfertDest", fields: [entrepotDestId], references: [id])
   entrepotSource   Entrepot         @relation("TransfertSource", fields: [entrepotSourceId], references: [id])
+  entrepotDest     Entrepot         @relation("TransfertDest", fields: [entrepotDestId], references: [id])
+  company          Company          @relation(fields: [companyId], references: [id])
 
   @@unique([numero, companyId])
   @@index([companyId])
@@ -836,8 +836,8 @@ model LigneTransfert {
   produitId   String
   quantite    Int
   createdAt   DateTime       @default(now())
-  produit     Produit        @relation(fields: [produitId], references: [id])
   transfert   TransfertStock @relation(fields: [transfertId], references: [id], onDelete: Cascade)
+  produit     Produit        @relation(fields: [produitId], references: [id])
 
   @@index([transfertId])
   @@index([produitId])
@@ -883,8 +883,8 @@ model CommandeFournisseur {
   companyId           String
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt
-  company             Company                    @relation(fields: [companyId], references: [id])
   fournisseur         Fournisseur                @relation(fields: [fournisseurId], references: [id])
+  company             Company                    @relation(fields: [companyId], references: [id])
   lignes              LigneCommandeFournisseur[]
 
   @@unique([numero, companyId])
@@ -905,8 +905,8 @@ model LigneCommandeFournisseur {
   recu          Boolean             @default(false)
   dateReception DateTime?
   createdAt     DateTime            @default(now())
-  produit       Produit             @relation(fields: [produitId], references: [id])
   commande      CommandeFournisseur @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  produit       Produit             @relation(fields: [produitId], references: [id])
 
   @@index([commandeId])
   @@index([produitId])
@@ -940,8 +940,8 @@ model LigneInventaire {
   valeurEcart    Int
   notes          String?
   createdAt      DateTime   @default(now())
-  produit        Produit    @relation(fields: [produitId], references: [id])
   inventaire     Inventaire @relation(fields: [inventaireId], references: [id], onDelete: Cascade)
+  produit        Produit    @relation(fields: [produitId], references: [id])
 
   @@unique([inventaireId, produitId])
   @@index([inventaireId])
@@ -966,8 +966,8 @@ model CommandeClient {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   bonLivraison     BonLivraison?
-  company          Company               @relation(fields: [companyId], references: [id])
   client           Client                @relation(fields: [clientId], references: [id])
+  company          Company               @relation(fields: [companyId], references: [id])
   lignes           LigneCommandeClient[]
 
   @@unique([numero, companyId])
@@ -989,8 +989,8 @@ model LigneCommandeClient {
   montantTVA     Int            @default(0)
   montantTTC     Int
   createdAt      DateTime       @default(now())
-  produit        Produit?       @relation(fields: [produitId], references: [id])
   commande       CommandeClient @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  produit        Produit?       @relation(fields: [produitId], references: [id])
 
   @@index([commandeId])
   @@index([produitId])
@@ -1009,8 +1009,8 @@ model BonLivraison {
   companyId     String
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  company       Company             @relation(fields: [companyId], references: [id])
   commande      CommandeClient      @relation(fields: [commandeId], references: [id])
+  company       Company             @relation(fields: [companyId], references: [id])
   lignes        LigneBonLivraison[]
 
   @@unique([numero, companyId])
@@ -1024,8 +1024,8 @@ model LigneBonLivraison {
   description    String
   quantite       Int
   createdAt      DateTime     @default(now())
-  produit        Produit?     @relation(fields: [produitId], references: [id])
   bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+  produit        Produit?     @relation(fields: [produitId], references: [id])
 
   @@index([bonLivraisonId])
 }
@@ -1115,8 +1115,8 @@ model EcritureComptable {
   companyId      String
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
-  exercice       ExerciceComptable @relation(fields: [exerciceId], references: [id])
   journal        JournalComptable  @relation(fields: [journalId], references: [id])
+  exercice       ExerciceComptable @relation(fields: [exerciceId], references: [id])
 
   @@index([journalId])
   @@index([exerciceId])
@@ -1140,8 +1140,8 @@ model SoldeCompte {
   creditFinal     Int               @default(0)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  exercice        ExerciceComptable @relation(fields: [exerciceId], references: [id])
   company         Company           @relation(fields: [companyId], references: [id])
+  exercice        ExerciceComptable @relation(fields: [exerciceId], references: [id])
 
   @@unique([companyId, exerciceId, compteNumero, periode])
   @@index([companyId])
@@ -1166,8 +1166,8 @@ model LigneBilan {
   parentId         String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  exercice         ExerciceComptable @relation(fields: [exerciceId], references: [id])
   company          Company           @relation(fields: [companyId], references: [id])
+  exercice         ExerciceComptable @relation(fields: [exerciceId], references: [id])
 
   @@index([companyId])
   @@index([exerciceId])
@@ -1188,8 +1188,8 @@ model LigneCompteResultat {
   parentId         String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  exercice         ExerciceComptable @relation(fields: [exerciceId], references: [id])
   company          Company           @relation(fields: [companyId], references: [id])
+  exercice         ExerciceComptable @relation(fields: [exerciceId], references: [id])
 
   @@index([companyId])
   @@index([exerciceId])
@@ -1205,8 +1205,8 @@ model Devise {
   actif      Boolean      @default(true)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
-  tauxCible  TauxChange[] @relation("TauxCible")
   tauxSource TauxChange[] @relation("TauxSource")
+  tauxCible  TauxChange[] @relation("TauxCible")
 
   @@index([code])
 }
@@ -1221,8 +1221,8 @@ model TauxChange {
   actif          Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  deviseCible    Devise   @relation("TauxCible", fields: [deviseCibleId], references: [id])
   deviseSource   Devise   @relation("TauxSource", fields: [deviseSourceId], references: [id])
+  deviseCible    Devise   @relation("TauxCible", fields: [deviseCibleId], references: [id])
 
   @@index([deviseSourceId])
   @@index([deviseCibleId])
@@ -1275,8 +1275,8 @@ model Prospect {
   updatedAt       DateTime      @updatedAt
   activites       ActiviteCRM[]
   opportunites    Opportunite[]
-  client          Client?       @relation(fields: [clientId], references: [id])
   company         Company       @relation(fields: [companyId], references: [id])
+  client          Client?       @relation(fields: [clientId], references: [id])
 
   @@index([companyId])
   @@index([statut])
@@ -1304,9 +1304,9 @@ model Opportunite {
   updatedAt         DateTime      @updatedAt
   activites         ActiviteCRM[]
   devis             Devis[]
-  client            Client?       @relation(fields: [clientId], references: [id])
-  prospect          Prospect      @relation(fields: [prospectId], references: [id])
   company           Company       @relation(fields: [companyId], references: [id])
+  prospect          Prospect      @relation(fields: [prospectId], references: [id])
+  client            Client?       @relation(fields: [clientId], references: [id])
 
   @@index([companyId])
   @@index([prospectId])
@@ -1334,9 +1334,9 @@ model ActiviteCRM {
   dateRappel    DateTime?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  opportunite   Opportunite? @relation(fields: [opportuniteId], references: [id])
-  prospect      Prospect?    @relation(fields: [prospectId], references: [id])
   company       Company      @relation(fields: [companyId], references: [id])
+  prospect      Prospect?    @relation(fields: [prospectId], references: [id])
+  opportunite   Opportunite? @relation(fields: [opportuniteId], references: [id])
 
   @@index([companyId])
   @@index([prospectId])
@@ -1378,262 +1378,14 @@ model EtapePipeline {
 }
 
 model ModuleConfiguration {
-  id              String   @id @default(cuid())
-  companyId       String
-  moduleCode      String
-  enabled         Boolean  @default(true)
-  configuredAt    DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  companyId    String
+  moduleCode   String
+  enabled      Boolean  @default(true)
+  configuredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, moduleCode])
   @@index([companyId])
-}
-
-model BetaTester {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  nom              String
-  prenom           String
-  entreprise       String?
-  telephone        String?
-  secteur          String?
-  tailleEntreprise String?
-  fonction         String?
-  besoins          String    @default("[]")  // JSON array stored as string
-  source           String?
-  status           String    @default("EN_ATTENTE")
-  codeAcces        String?   @unique
-  activatedAt      DateTime?
-  feedbackSent     Boolean   @default(false)
-  feedbackDate     DateTime?
-  notes            String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  @@index([email])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model ApiKey {
-  id          String    @id @default(cuid())
-  keyHash     String    @unique
-  keyPrefix   String
-  name        String
-  companyId   String
-  permissions String    @default("[]")  // JSON array stored as string
-  rateLimit   Int       @default(1000)
-  lastUsed    DateTime?
-  expiresAt   DateTime?
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([companyId])
-  @@index([keyHash])
-}
-
-model Webhook {
-  id            String    @id @default(cuid())
-  companyId     String
-  url           String
-  events        String    @default("[]")  // JSON array stored as string
-  secret        String
-  active        Boolean   @default(true)
-  lastTriggered DateTime?
-  failureCount  Int       @default(0)
-  lastError     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([companyId])
-  @@index([active])
-}
-
-model WebhookLog {
-  id          String   @id @default(cuid())
-  webhookId   String
-  event       String
-  payload     String
-  response    String?
-  statusCode  Int?
-  success     Boolean  @default(false)
-  duration    Int?
-  error       String?
-  createdAt   DateTime @default(now())
-
-  @@index([webhookId])
-  @@index([createdAt])
-}
-
-model ApiUsageLog {
-  id           String   @id @default(cuid())
-  apiKeyId     String
-  endpoint     String
-  method       String
-  statusCode   Int
-  responseTime Int      // en millisecondes
-  ipAddress    String?
-  userAgent    String?
-  error        String?
-  createdAt    DateTime @default(now())
-
-  @@index([apiKeyId])
-  @@index([endpoint])
-  @@index([createdAt])
-  @@index([statusCode])
-}
-
-model Partner {
-  id              String    @id @default(cuid())
-  code            String    @unique
-  nom             String
-  email           String    @unique
-  telephone       String
-  adresse         String?
-  ville           String?
-  pays            String    @default("Guinée")
-  type            String    @default("AFFILIATE") // RESELLER, AFFILIATE, INTEGRATOR
-  commission      Int       @default(15)
-  status          String    @default("EN_ATTENTE")
-  logo            String?
-  website         String?
-  description     String?
-  motivation      String?
-  clientsCount    Int       @default(0)
-  revenueTotal    Int       @default(0)
-  commissionTotal Int       @default(0)
-  approvedAt      DateTime?
-  suspendedAt     DateTime?
-  suspensionRaison String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  clients         PartnerClient[]
-  commissions     PartnerCommission[]
-
-  @@index([code])
-  @@index([email])
-  @@index([status])
-  @@index([type])
-}
-
-model PartnerClient {
-  id          String    @id @default(cuid())
-  partnerId   String
-  companyId   String
-  commission  Int       @default(15)
-  revenue     Int       @default(0)
-  createdAt   DateTime  @default(now())
-  partner     Partner   @relation(fields: [partnerId], references: [id])
-
-  @@unique([partnerId, companyId])
-  @@index([partnerId])
-  @@index([companyId])
-}
-
-model PartnerCommission {
-  id          String    @id @default(cuid())
-  partnerId   String
-  montant     Int
-  source      String?
-  reference   String?
-  status      String    @default("EN_ATTENTE")
-  paidAt      DateTime?
-  createdAt   DateTime  @default(now())
-  partner     Partner   @relation(fields: [partnerId], references: [id])
-
-  @@index([partnerId])
-  @@index([status])
-}
-
-// ============================================
-// BANKING INTEGRATION MODELS
-// ============================================
-
-model CompteBancaire {
-  id                String    @id @default(cuid())
-  companyId         String
-  bankCode          String    // BSG, BICIGUI, SGBG, BPG, ECOBANK, ORABANK
-  accountNumber     String
-  accountName       String
-  currency          String    @default("GNF")
-  type              String    @default("CHECKING") // CHECKING, SAVINGS, BUSINESS
-  iban              String?
-  bic               String?
-  soldeActuel       Int?
-  soldeDisponible   Int?
-  derniereSynchro   DateTime?
-  actif             Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  @@unique([companyId, accountNumber])
-  @@index([companyId])
-  @@index([bankCode])
-}
-
-model BankCredential {
-  id            String   @id @default(cuid())
-  companyId     String
-  bankCode      String
-  clientId      String
-  clientSecret  String   // TODO: Encrypt in production
-  merchantId    String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([companyId, bankCode])
-  @@index([companyId])
-}
-
-model VirementBancaire {
-  id              String    @id @default(cuid())
-  companyId       String
-  fromAccountId   String
-  toAccount       String
-  toBank          String?
-  amount          Int
-  currency        String    @default("GNF")
-  reference       String
-  description     String?
-  beneficiaryName String?
-  transactionId   String?   @unique
-  status          String    @default("PENDING")
-  scheduledAt     DateTime?
-  processedAt     DateTime?
-  error           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([companyId])
-  @@index([fromAccountId])
-  @@index([status])
-  @@index([transactionId])
-}
-
-model TransactionBancaire {
-  id              String    @id @default(cuid())
-  companyId       String
-  compteBancaireId String
-  reference       String
-  type            String    // CREDIT, DEBIT
-  amount          Int
-  currency        String    @default("GNF")
-  description     String?
-  dateTransaction DateTime
-  dateValeur      DateTime?
-  contrepartie    String?
-  compteContrepartie String?
-  categorie       String?
-  status          String    @default("COMPLETED")
-  reconcilie      Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-
-  @@unique([compteBancaireId, reference])
-  @@index([companyId])
-  @@index([compteBancaireId])
-  @@index([dateTransaction])
-  @@index([reconcilie])
 }

@@ -157,10 +157,12 @@ export const getMonthlyStats = async (
   for (let i = 1; i <= 12; i++) {
     const data = monthlyData.get(i)!;
     result.push({
-      mois: monthNames[i - 1],
-      revenus: data.revenus,
+      mois: i,
+      annee,
+      chiffreAffaires: data.revenus,
       depenses: data.depenses,
-      benefice: data.revenus - data.depenses,
+      masseSalariale: 0,
+      nombreFactures: 0,
     });
   }
 

@@ -204,7 +204,7 @@ class BSGAdapter extends BankAdapter {
         throw new Error(`BSG API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       return {
         accountNumber,
         currency: data.currency || 'GNF',
@@ -241,7 +241,7 @@ class BSGAdapter extends BankAdapter {
         throw new Error(`BSG API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       return data.transactions.map((t: any) => ({
         id: t.id,
         accountNumber,
@@ -278,7 +278,7 @@ class BSGAdapter extends BankAdapter {
         body: payload,
       });
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       return {
         success: response.ok,
@@ -308,7 +308,7 @@ class BSGAdapter extends BankAdapter {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       return {
         success: response.ok,
@@ -342,7 +342,7 @@ class EcobankAdapter extends BankAdapter {
         throw new Error(`Ecobank API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       return {
         accountNumber,
         currency: data.accountCurrency || 'GNF',
@@ -383,7 +383,7 @@ class EcobankAdapter extends BankAdapter {
         throw new Error(`Ecobank API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       return data.transactions.map((t: any) => ({
         id: t.transactionId,
         accountNumber,
@@ -432,7 +432,7 @@ class EcobankAdapter extends BankAdapter {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       return {
         success: response.ok,
@@ -440,7 +440,7 @@ class EcobankAdapter extends BankAdapter {
         reference: data.paymentReference,
         status: data.status || 'PENDING',
         message: data.message,
-        estimatedArrival: data.expectedValueDate ? new Date(data.expectedValueDate) : undefined,
+        estimatedArrival: (data as any).expectedValueDate ? new Date((data as any).expectedValueDate) : undefined,
       };
     } catch (error) {
       logger.error('Ecobank transfer error', { error, transfer });
@@ -464,13 +464,13 @@ class EcobankAdapter extends BankAdapter {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       return {
         success: response.ok,
-        transactionId: data.transactionId,
-        status: data.status,
-        message: data.statusDescription,
+        transactionId: (data as any).transactionId,
+        status: (data as any).status,
+        message: (data as any).statusDescription,
       };
     } catch (error) {
       logger.error('Ecobank transfer status error', { error, transactionId });
