@@ -164,12 +164,32 @@ cd ..
 npm run dev
 ```
 
-#### Sur Windows (PowerShell)
+#### Sur Windows (PowerShell) - Méthode Rapide
 
 ```powershell
 # Cloner le repository
 git clone https://github.com/skaba89/guineemenages.git
 cd guineemenages
+
+# Utiliser le script de démarrage automatique
+./start-clean.ps1
+```
+
+Le script `start-clean.ps1` va automatiquement :
+- Libérer les ports 3000 et 3001 si occupés
+- Créer le fichier `.env` si nécessaire
+- Initialiser la base de données
+- Proposer de démarrer les serveurs
+
+#### Sur Windows (PowerShell) - Méthode Manuelle
+
+```powershell
+# Cloner le repository
+git clone https://github.com/skaba89/guineemenages.git
+cd guineemenages
+
+# Si vous avez des erreurs de port, libérez-les d'abord:
+./kill-ports.ps1
 
 # Installation des dépendances frontend
 npm install
@@ -181,7 +201,6 @@ npm install
 # Initialisation de la base de données
 npx prisma generate
 npx prisma db push
-npx ts-node prisma/seed.ts
 
 # Démarrage du backend (port 3001)
 npx ts-node-dev --respawn --transpile-only src/index.ts
@@ -228,9 +247,26 @@ npx ts-node-dev --respawn --transpile-only src/index.ts
 
 #### Erreur "Port 3000/3001 déjà utilisé"
 
-Trouvez et tuez le processus utilisant le port :
-- **Windows**: `netstat -ano | findstr :3000` puis `taskkill /PID <PID> /F`
-- **Linux/macOS**: `lsof -i :3000` puis `kill -9 <PID>`
+**Méthode rapide (Windows)** - Utilisez le script fourni :
+```powershell
+./kill-ports.ps1
+```
+
+**Méthode manuelle** - Trouvez et tuez le processus utilisant le port :
+- **Windows**:
+  ```powershell
+  # Voir les processus sur les ports
+  netstat -ano | findstr :3000
+  netstat -ano | findstr :3001
+  
+  # Tuer un processus spécifique (remplacez <PID> par le numéro trouvé)
+  taskkill /PID <PID> /F
+  ```
+- **Linux/macOS**:
+  ```bash
+  lsof -i :3000
+  kill -9 <PID>
+  ```
 
 ### Variables d'Environnement
 
