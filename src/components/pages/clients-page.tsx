@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Building, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Edit2, Trash2, Building, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,14 +42,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAppStore } from '@/stores/auth-store';
-import { formatGNF, formatDate } from '@/lib/mock-data';
+import { formatGNF } from '@/lib/mock-data';
 import { Client } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 export function ClientsPage() {
-  const { clients, addClient, updateClient, deleteClient } = useAppStore();
+  const { clients, fetchClients, addClient, updateClient, deleteClient, error } = useAppStore();
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [formData, setFormData] = useState({
     nom: '',
     email: '',
@@ -60,19 +64,77 @@ export function ClientsPage() {
     type: 'PARTICULIER' as 'PARTICULIER' | 'ENTREPRISE'
   });
 
+  // Charger les clients au montage
+  useEffect(() => {
+    const loadClients = async () => {
+      setIsFetching(true);
+      await fetchClients();
+      setIsFetching(false);
+    };
+    loadClients();
+  }, [fetchClients]);
+
   const filteredClients = clients.filter(c => 
     c.nom.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = () => {
-    if (editingClient) {
-      updateClient(editingClient.id, formData);
-    } else {
-      addClient(formData);
+  const handleSubmit = async () => {
+    if (!formData.nom.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nom du client est obligatoire',
+        variant: 'destructive',
+      });
+      return;
     }
-    setIsDialogOpen(false);
-    resetForm();
+
+    setIsLoading(true);
+    try {
+      let success: boolean;
+      if (editingClient) {
+        success = await updateClient(editingClient.id, formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Client modifié avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de modifier le client',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        success = await addClient(formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Client créé avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de créer le client',
+            variant: 'destructive',
+          });
+        }
+      }
+      
+      if (success) {
+        setIsDialogOpen(false);
+        resetForm();
+      }
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -100,6 +162,22 @@ export function ClientsPage() {
       type: client.type
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    const success = await deleteClient(id);
+    if (success) {
+      toast({
+        title: 'Succès',
+        description: 'Client supprimé avec succès',
+      });
+    } else {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le client',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -181,12 +259,20 @@ export function ClientsPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pays">Pays</Label>
-                  <Input
-                    id="pays"
-                    value={formData.pays}
-                    onChange={(e) => setFormData({...formData, pays: e.target.value})}
-                    placeholder="Guinée"
-                  />
+                  <Select value={formData.pays} onValueChange={(value) => setFormData({...formData, pays: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Guinée">Guinée</SelectItem>
+                      <SelectItem value="Sénégal">Sénégal</SelectItem>
+                      <SelectItem value="Mali">Mali</SelectItem>
+                      <SelectItem value="Côte d'Ivoire">Côte d'Ivoire</SelectItem>
+                      <SelectItem value="Burkina Faso">Burkina Faso</SelectItem>
+                      <SelectItem value="Bénin">Bénin</SelectItem>
+                      <SelectItem value="Niger">Niger</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -200,8 +286,15 @@ export function ClientsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+                Annuler
+              </Button>
+              <Button 
+                className="bg-emerald-600 hover:bg-emerald-700" 
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingClient ? 'Modifier' : 'Créer'}
               </Button>
             </DialogFooter>
@@ -215,82 +308,95 @@ export function ClientsPage() {
           <CardTitle>{filteredClients.length} client(s)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Ville</TableHead>
-                <TableHead className="text-right">Total achats</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                        {client.type === 'ENTREPRISE' ? (
-                          <Building className="w-5 h-5 text-slate-600" />
-                        ) : (
-                          <User className="w-5 h-5 text-slate-600" />
-                        )}
-                      </div>
-                      <span className="font-medium">{client.nom}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{client.email || '-'}</p>
-                      <p className="text-slate-500">{client.telephone || '-'}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={client.type === 'ENTREPRISE' ? 'default' : 'secondary'}>
-                      {client.type === 'ENTREPRISE' ? 'Entreprise' : 'Particulier'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{client.ville || '-'}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatGNF(client.totalAchats)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(client)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Supprimer le client ?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Êtes-vous sûr de vouloir supprimer {client.nom} ? Cette action est irréversible.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction 
-                              className="bg-red-600 hover:bg-red-700"
-                              onClick={() => deleteClient(client.id)}
-                            >
-                              Supprimer
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+          {isFetching ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              <span className="ml-2">Chargement des clients...</span>
+            </div>
+          ) : filteredClients.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              {clients.length === 0 
+                ? 'Aucun client. Créez votre premier client en cliquant sur "Nouveau client".'
+                : 'Aucun client ne correspond à votre recherche.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Ville</TableHead>
+                  <TableHead className="text-right">Total achats</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredClients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                          {client.type === 'ENTREPRISE' ? (
+                            <Building className="w-5 h-5 text-slate-600" />
+                          ) : (
+                            <User className="w-5 h-5 text-slate-600" />
+                          )}
+                        </div>
+                        <span className="font-medium">{client.nom}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <p>{client.email || '-'}</p>
+                        <p className="text-slate-500">{client.telephone || '-'}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={client.type === 'ENTREPRISE' ? 'default' : 'secondary'}>
+                        {client.type === 'ENTREPRISE' ? 'Entreprise' : 'Particulier'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{client.ville || '-'}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatGNF(client.totalAchats)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(client)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer le client ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir supprimer {client.nom} ? Cette action est irréversible.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-red-600 hover:bg-red-700"
+                                onClick={() => handleDelete(client.id)}
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

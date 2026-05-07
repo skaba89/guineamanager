@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Users, User, Mail, Phone, Calendar, Briefcase } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Edit2, Trash2, Users, User, Mail, Phone, Calendar, Briefcase, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,8 +41,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAppStore } from '@/stores/auth-store';
-import { formatGNF, formatDate } from '@/lib/mock-data';
+import { formatGNF } from '@/lib/mock-data';
 import { Employe } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 const departements = [
   'Administration',
@@ -63,11 +64,14 @@ const typesContrat = [
 ];
 
 export function EmployesPage() {
-  const { employes, addEmploye, updateEmploye, deleteEmploye } = useAppStore();
+  const { employes, fetchEmployes, addEmploye, updateEmploye, deleteEmploye, error } = useAppStore();
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [filterDept, setFilterDept] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmploye, setEditingEmploye] = useState<Employe | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [formData, setFormData] = useState({
     matricule: '',
     nom: '',
@@ -83,6 +87,16 @@ export function EmployesPage() {
     typeContrat: 'CDI' as Employe['typeContrat']
   });
 
+  // Charger les employés au montage
+  useEffect(() => {
+    const loadEmployes = async () => {
+      setIsFetching(true);
+      await fetchEmployes();
+      setIsFetching(false);
+    };
+    loadEmployes();
+  }, [fetchEmployes]);
+
   const filteredEmployes = employes.filter(e => {
     const matchSearch = 
       e.nom.toLowerCase().includes(search.toLowerCase()) ||
@@ -92,14 +106,80 @@ export function EmployesPage() {
     return matchSearch && matchDept;
   });
 
-  const handleSubmit = () => {
-    if (editingEmploye) {
-      updateEmploye(editingEmploye.id, formData);
-    } else {
-      addEmploye(formData);
+  const handleSubmit = async () => {
+    if (!formData.nom.trim() || !formData.prenom.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nom et le prénom sont obligatoires',
+        variant: 'destructive',
+      });
+      return;
     }
-    setIsDialogOpen(false);
-    resetForm();
+
+    if (!formData.poste.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le poste est obligatoire',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.salaireBase <= 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Le salaire de base doit être supérieur à 0',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      let success: boolean;
+      if (editingEmploye) {
+        success = await updateEmploye(editingEmploye.id, formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Employé modifié avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de modifier l\'employé',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        success = await addEmploye(formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Employé créé avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de créer l\'employé',
+            variant: 'destructive',
+          });
+        }
+      }
+      
+      if (success) {
+        setIsDialogOpen(false);
+        resetForm();
+      }
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -137,6 +217,22 @@ export function EmployesPage() {
       typeContrat: employe.typeContrat
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    const success = await deleteEmploye(id);
+    if (success) {
+      toast({
+        title: 'Succès',
+        description: 'Employé supprimé avec succès',
+      });
+    } else {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer l\'employé',
+        variant: 'destructive',
+      });
+    }
   };
 
   const stats = {
@@ -372,8 +468,15 @@ export function EmployesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+                Annuler
+              </Button>
+              <Button 
+                className="bg-emerald-600 hover:bg-emerald-700" 
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingEmploye ? 'Modifier' : 'Créer'}
               </Button>
             </DialogFooter>
@@ -387,85 +490,98 @@ export function EmployesPage() {
           <CardTitle>{filteredEmployes.length} employé(s)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employé</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Poste</TableHead>
-                <TableHead>Département</TableHead>
-                <TableHead>Contrat</TableHead>
-                <TableHead className="text-right">Salaire</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployes.map((employe) => (
-                <TableRow key={employe.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <span className="font-semibold text-emerald-600">
-                          {employe.prenom[0]}{employe.nom[0]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{employe.prenom} {employe.nom}</p>
-                        <p className="text-sm text-slate-500">{employe.matricule}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="flex items-center gap-1"><Mail className="w-3 h-3" /> {employe.email || '-'}</p>
-                      <p className="flex items-center gap-1 text-slate-500"><Phone className="w-3 h-3" /> {employe.telephone || '-'}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{employe.poste}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{employe.departement || '-'}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={employe.typeContrat === 'CDI' ? 'default' : 'secondary'}>
-                      {employe.typeContrat}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{formatGNF(employe.salaireBase)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(employe)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Supprimer l'employé ?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Êtes-vous sûr de vouloir supprimer {employe.prenom} {employe.nom} ?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction 
-                              className="bg-red-600 hover:bg-red-700"
-                              onClick={() => deleteEmploye(employe.id)}
-                            >
-                              Supprimer
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+          {isFetching ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              <span className="ml-2">Chargement des employés...</span>
+            </div>
+          ) : filteredEmployes.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              {employes.length === 0 
+                ? 'Aucun employé. Créez votre premier employé en cliquant sur "Nouvel employé".'
+                : 'Aucun employé ne correspond à votre recherche.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employé</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Poste</TableHead>
+                  <TableHead>Département</TableHead>
+                  <TableHead>Contrat</TableHead>
+                  <TableHead className="text-right">Salaire</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployes.map((employe) => (
+                  <TableRow key={employe.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                          <span className="font-semibold text-emerald-600">
+                            {employe.prenom[0]}{employe.nom[0]}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium">{employe.prenom} {employe.nom}</p>
+                          <p className="text-sm text-slate-500">{employe.matricule}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <p className="flex items-center gap-1"><Mail className="w-3 h-3" /> {employe.email || '-'}</p>
+                        <p className="flex items-center gap-1 text-slate-500"><Phone className="w-3 h-3" /> {employe.telephone || '-'}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{employe.poste}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{employe.departement || '-'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={employe.typeContrat === 'CDI' ? 'default' : 'secondary'}>
+                        {employe.typeContrat}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatGNF(employe.salaireBase)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(employe)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer l'employé ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir supprimer {employe.prenom} {employe.nom} ?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-red-600 hover:bg-red-700"
+                                onClick={() => handleDelete(employe.id)}
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

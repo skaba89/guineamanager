@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Edit2, Trash2, Package, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,7 @@ import {
 import { useAppStore } from '@/stores/auth-store';
 import { formatGNF } from '@/lib/mock-data';
 import { Produit } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 const categories = [
   'Fournitures de bureau',
@@ -57,11 +58,21 @@ const categories = [
 
 const unites = ['Unité', 'Pack', 'Ramette', 'Carton', 'Kg', 'Litre', 'Mètre', 'Heure'];
 
+// TVA rates for West Africa
+const tvaRates = [
+  { value: 0, label: '0%' },
+  { value: 0.18, label: '18% (Standard)' },
+  { value: 0.09, label: '9% (Réduit)' },
+];
+
 export function ProduitsPage() {
-  const { produits, addProduit, updateProduit, deleteProduit } = useAppStore();
+  const { produits, fetchProduits, addProduit, updateProduit, deleteProduit, error } = useAppStore();
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduit, setEditingProduit] = useState<Produit | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [formData, setFormData] = useState({
     nom: '',
     description: '',
@@ -69,22 +80,81 @@ export function ProduitsPage() {
     unite: 'Unité',
     stockActuel: 0,
     stockMin: 0,
-    categorie: ''
+    categorie: '',
+    tva: 0.18
   });
+
+  // Charger les produits au montage
+  useEffect(() => {
+    const loadProduits = async () => {
+      setIsFetching(true);
+      await fetchProduits();
+      setIsFetching(false);
+    };
+    loadProduits();
+  }, [fetchProduits]);
 
   const filteredProduits = produits.filter(p => 
     p.nom.toLowerCase().includes(search.toLowerCase()) ||
     p.categorie?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = () => {
-    if (editingProduit) {
-      updateProduit(editingProduit.id, formData);
-    } else {
-      addProduit(formData);
+  const handleSubmit = async () => {
+    if (!formData.nom.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nom du produit est obligatoire',
+        variant: 'destructive',
+      });
+      return;
     }
-    setIsDialogOpen(false);
-    resetForm();
+
+    setIsLoading(true);
+    try {
+      let success: boolean;
+      if (editingProduit) {
+        success = await updateProduit(editingProduit.id, formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Produit modifié avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de modifier le produit',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        success = await addProduit(formData);
+        if (success) {
+          toast({
+            title: 'Succès',
+            description: 'Produit créé avec succès',
+          });
+        } else {
+          toast({
+            title: 'Erreur',
+            description: error || 'Impossible de créer le produit',
+            variant: 'destructive',
+          });
+        }
+      }
+      
+      if (success) {
+        setIsDialogOpen(false);
+        resetForm();
+      }
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -95,7 +165,8 @@ export function ProduitsPage() {
       unite: 'Unité',
       stockActuel: 0,
       stockMin: 0,
-      categorie: ''
+      categorie: '',
+      tva: 0.18
     });
     setEditingProduit(null);
   };
@@ -109,9 +180,26 @@ export function ProduitsPage() {
       unite: produit.unite,
       stockActuel: produit.stockActuel,
       stockMin: produit.stockMin,
-      categorie: produit.categorie || ''
+      categorie: produit.categorie || '',
+      tva: produit.tva || 0.18
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    const success = await deleteProduit(id);
+    if (success) {
+      toast({
+        title: 'Succès',
+        description: 'Produit supprimé avec succès',
+      });
+    } else {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le produit',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getStockStatus = (produit: Produit) => {
@@ -228,6 +316,21 @@ export function ProduitsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="tva">TVA</Label>
+                  <Select value={String(formData.tva)} onValueChange={(value) => setFormData({...formData, tva: parseFloat(value)})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tvaRates.map(rate => (
+                        <SelectItem key={rate.value} value={String(rate.value)}>{rate.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
                   <Label htmlFor="unite">Unité</Label>
                   <Select value={formData.unite} onValueChange={(value) => setFormData({...formData, unite: value})}>
                     <SelectTrigger>
@@ -236,6 +339,19 @@ export function ProduitsPage() {
                     <SelectContent>
                       {unites.map(u => (
                         <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="categorie">Catégorie</Label>
+                  <Select value={formData.categorie} onValueChange={(value) => setFormData({...formData, categorie: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -261,23 +377,17 @@ export function ProduitsPage() {
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="categorie">Catégorie</Label>
-                <Select value={formData.categorie} onValueChange={(value) => setFormData({...formData, categorie: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+                Annuler
+              </Button>
+              <Button 
+                className="bg-emerald-600 hover:bg-emerald-700" 
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingProduit ? 'Modifier' : 'Créer'}
               </Button>
             </DialogFooter>
@@ -291,88 +401,101 @@ export function ProduitsPage() {
           <CardTitle>{filteredProduits.length} produit(s)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Produit</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead className="text-right">Prix unitaire</TableHead>
-                <TableHead className="text-center">Stock</TableHead>
-                <TableHead className="text-center">Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProduits.map((produit) => {
-                const stockStatus = getStockStatus(produit);
-                return (
-                  <TableRow key={produit.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{produit.nom}</p>
-                        <p className="text-sm text-slate-500">{produit.description}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{produit.categorie || 'Non classé'}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatGNF(produit.prixUnitaire)} / {produit.unite}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-center">
-                        <p className="font-medium">{produit.stockActuel}</p>
-                        <Progress 
-                          value={Math.min((produit.stockActuel / (produit.stockMin * 3)) * 100, 100)} 
-                          className="w-16 h-1.5 mx-auto mt-1"
-                        />
-                        <p className="text-xs text-slate-500">Min: {produit.stockMin}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant={stockStatus.color === 'destructive' ? 'destructive' : stockStatus.color === 'warning' ? 'secondary' : 'default'}
-                        className={stockStatus.color === 'success' ? 'bg-emerald-600' : stockStatus.color === 'warning' ? 'bg-amber-500' : ''}
-                      >
-                        {stockStatus.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(produit)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer le produit ?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir supprimer {produit.nom} ?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-red-600 hover:bg-red-700"
-                                onClick={() => deleteProduit(produit.id)}
-                              >
-                                Supprimer
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          {isFetching ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              <span className="ml-2">Chargement des produits...</span>
+            </div>
+          ) : filteredProduits.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              {produits.length === 0 
+                ? 'Aucun produit. Créez votre premier produit en cliquant sur "Nouveau produit".'
+                : 'Aucun produit ne correspond à votre recherche.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produit</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead className="text-right">Prix unitaire</TableHead>
+                  <TableHead className="text-center">Stock</TableHead>
+                  <TableHead className="text-center">Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProduits.map((produit) => {
+                  const stockStatus = getStockStatus(produit);
+                  return (
+                    <TableRow key={produit.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{produit.nom}</p>
+                          <p className="text-sm text-slate-500">{produit.description}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{produit.categorie || 'Non classé'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatGNF(produit.prixUnitaire)} / {produit.unite}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <p className="font-medium">{produit.stockActuel}</p>
+                          <Progress 
+                            value={Math.min((produit.stockActuel / (produit.stockMin * 3)) * 100, 100)} 
+                            className="w-16 h-1.5 mx-auto mt-1"
+                          />
+                          <p className="text-xs text-slate-500">Min: {produit.stockMin}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge 
+                          variant={stockStatus.color === 'destructive' ? 'destructive' : stockStatus.color === 'warning' ? 'secondary' : 'default'}
+                          className={stockStatus.color === 'success' ? 'bg-emerald-600' : stockStatus.color === 'warning' ? 'bg-amber-500' : ''}
+                        >
+                          {stockStatus.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(produit)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Supprimer le produit ?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Êtes-vous sûr de vouloir supprimer {produit.nom} ?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={() => handleDelete(produit.id)}
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
