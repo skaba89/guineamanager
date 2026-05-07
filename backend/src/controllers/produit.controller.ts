@@ -9,29 +9,29 @@ import { asyncHandler } from '../middlewares/errorHandler';
 // Schémas de validation
 const createProduitSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  reference: z.string().optional(),
-  description: z.string().optional(),
-  prixUnitaire: z.number().min(0, 'Le prix unitaire doit être positif').default(0),
+  reference: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  prixUnitaire: z.coerce.number().min(0, 'Le prix unitaire doit être positif').default(0),
   unite: z.string().optional().default('Unité'),
-  stockActuel: z.number().int().min(0).optional().default(0),
-  stockMin: z.number().int().min(0).optional().default(0),
-  stockMax: z.number().int().min(0).optional(),
-  categorie: z.string().optional(),
-  tva: z.number().min(0).max(1).optional().default(0.18),
+  stockActuel: z.coerce.number().int().min(0).optional().default(0),
+  stockMin: z.coerce.number().int().min(0).optional().default(0),
+  stockMax: z.coerce.number().int().min(0).optional().nullable(),
+  categorie: z.string().optional().nullable(),
+  tva: z.coerce.number().min(0).max(1).optional().default(0.18),
   type: z.enum(['PRODUIT', 'SERVICE']).optional().default('PRODUIT'),
 });
 
 const updateProduitSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').optional(),
-  reference: z.string().optional(),
-  description: z.string().optional(),
-  prixUnitaire: z.number().min(0, 'Le prix unitaire doit être positif').optional(),
+  reference: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  prixUnitaire: z.coerce.number().min(0, 'Le prix unitaire doit être positif').optional(),
   unite: z.string().optional(),
-  stockActuel: z.number().int().min(0).optional(),
-  stockMin: z.number().int().min(0).optional(),
-  stockMax: z.number().int().min(0).optional(),
-  categorie: z.string().optional(),
-  tva: z.number().min(0).max(1).optional(),
+  stockActuel: z.coerce.number().int().min(0).optional(),
+  stockMin: z.coerce.number().int().min(0).optional(),
+  stockMax: z.coerce.number().int().min(0).optional().nullable(),
+  categorie: z.string().optional().nullable(),
+  tva: z.coerce.number().min(0).max(1).optional(),
   type: z.enum(['PRODUIT', 'SERVICE']).optional(),
 });
 
@@ -43,15 +43,31 @@ const updateStockSchema = z.object({
 // Créer un produit
 export const createProduit = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const validated = createProduitSchema.parse(req.body);
-    const { companyId } = req as AuthenticatedRequest;
+    try {
+      const validated = createProduitSchema.parse(req.body);
+      const { companyId } = req as AuthenticatedRequest;
 
-    const produit = await produitService.createProduit(companyId, validated);
+      const produit = await produitService.createProduit(companyId, validated);
 
-    res.status(201).json({
-      success: true,
-      data: produit,
-    });
+      res.status(201).json({
+        success: true,
+        data: produit,
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        console.error('Validation error:', error.errors);
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Erreur de validation',
+            details: error.errors,
+          },
+        });
+        return;
+      }
+      throw error;
+    }
   }
 );
 

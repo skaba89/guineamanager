@@ -112,9 +112,23 @@ export const updateProduit = async (
     throw new NotFoundError('Produit non trouvé');
   }
 
+  // Build update data, filtering out null/undefined values
+  const updateData: any = {};
+  if (data.nom !== undefined && data.nom !== null) updateData.nom = data.nom;
+  if (data.description !== undefined) updateData.description = data.description;
+  if (data.reference !== undefined) updateData.reference = data.reference;
+  if (data.prixUnitaire !== undefined && data.prixUnitaire !== null) updateData.prixUnitaire = data.prixUnitaire;
+  if (data.unite !== undefined && data.unite !== null) updateData.unite = data.unite;
+  if (data.stockActuel !== undefined && data.stockActuel !== null) updateData.stockActuel = data.stockActuel;
+  if (data.stockMin !== undefined && data.stockMin !== null) updateData.stockMin = data.stockMin;
+  if (data.stockMax !== undefined) updateData.stockMax = data.stockMax;
+  if (data.categorie !== undefined) updateData.categorie = data.categorie;
+  if (data.tva !== undefined && data.tva !== null) updateData.tva = data.tva;
+  if (data.type !== undefined && data.type !== null) updateData.type = data.type;
+
   const produit = await prisma.produit.update({
     where: { id: produitId },
-    data,
+    data: updateData,
   });
 
   return produit;
