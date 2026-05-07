@@ -91,6 +91,9 @@ function DonutChart({
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   
+  // Handle empty data or zero total
+  const hasData = data.length > 0 && total > 0;
+  
   let offset = 0;
   
   return (
@@ -106,8 +109,11 @@ function DonutChart({
           strokeWidth={strokeWidth}
           className="text-slate-100"
         />
-        {/* Data segments */}
-        {data.map((item, index) => {
+        {/* Data segments - only render if we have valid data */}
+        {hasData && data.map((item, index) => {
+          // Skip items with zero value
+          if (item.value <= 0) return null;
+          
           const percentage = (item.value / total) * 100;
           const dashLength = (percentage / 100) * circumference;
           const dashOffset = offset;
@@ -130,6 +136,20 @@ function DonutChart({
             />
           );
         })}
+        {/* Empty state indicator */}
+        {!hasData && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#e2e8f0"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${circumference * 0.75} ${circumference}`}
+            strokeLinecap="round"
+            className="animate-pulse"
+          />
+        )}
       </svg>
       {/* Center text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
