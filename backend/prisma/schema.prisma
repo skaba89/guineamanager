@@ -1389,3 +1389,251 @@ model ModuleConfiguration {
   @@unique([companyId, moduleCode])
   @@index([companyId])
 }
+
+model BetaTester {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  nom              String
+  prenom           String
+  entreprise       String?
+  telephone        String?
+  secteur          String?
+  tailleEntreprise String?
+  fonction         String?
+  besoins          String    @default("[]")  // JSON array stored as string
+  source           String?
+  status           String    @default("EN_ATTENTE")
+  codeAcces        String?   @unique
+  activatedAt      DateTime?
+  feedbackSent     Boolean   @default(false)
+  feedbackDate     DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  keyHash     String    @unique
+  keyPrefix   String
+  name        String
+  companyId   String
+  permissions String    @default("[]")  // JSON array stored as string
+  rateLimit   Int       @default(1000)
+  lastUsed    DateTime?
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([keyHash])
+}
+
+model Webhook {
+  id            String    @id @default(cuid())
+  companyId     String
+  url           String
+  events        String    @default("[]")  // JSON array stored as string
+  secret        String
+  active        Boolean   @default(true)
+  lastTriggered DateTime?
+  failureCount  Int       @default(0)
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([active])
+}
+
+model WebhookLog {
+  id          String   @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     String
+  response    String?
+  statusCode  Int?
+  success     Boolean  @default(false)
+  duration    Int?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+model ApiUsageLog {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int      // en millisecondes
+  ipAddress    String?
+  userAgent    String?
+  error        String?
+  createdAt    DateTime @default(now())
+
+  @@index([apiKeyId])
+  @@index([endpoint])
+  @@index([createdAt])
+  @@index([statusCode])
+}
+
+model Partner {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  nom             String
+  email           String    @unique
+  telephone       String
+  adresse         String?
+  ville           String?
+  pays            String    @default("Guinée")
+  type            String    @default("AFFILIATE") // RESELLER, AFFILIATE, INTEGRATOR
+  commission      Int       @default(15)
+  status          String    @default("EN_ATTENTE")
+  logo            String?
+  website         String?
+  description     String?
+  motivation      String?
+  clientsCount    Int       @default(0)
+  revenueTotal    Int       @default(0)
+  commissionTotal Int       @default(0)
+  approvedAt      DateTime?
+  suspendedAt     DateTime?
+  suspensionRaison String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  clients         PartnerClient[]
+  commissions     PartnerCommission[]
+
+  @@index([code])
+  @@index([email])
+  @@index([status])
+  @@index([type])
+}
+
+model PartnerClient {
+  id          String    @id @default(cuid())
+  partnerId   String
+  companyId   String
+  commission  Int       @default(15)
+  revenue     Int       @default(0)
+  createdAt   DateTime  @default(now())
+  partner     Partner   @relation(fields: [partnerId], references: [id])
+
+  @@unique([partnerId, companyId])
+  @@index([partnerId])
+  @@index([companyId])
+}
+
+model PartnerCommission {
+  id          String    @id @default(cuid())
+  partnerId   String
+  montant     Int
+  source      String?
+  reference   String?
+  status      String    @default("EN_ATTENTE")
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  partner     Partner   @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@index([status])
+}
+
+// ============================================
+// BANKING INTEGRATION MODELS
+// ============================================
+
+model CompteBancaire {
+  id                String    @id @default(cuid())
+  companyId         String
+  bankCode          String    // BSG, BICIGUI, SGBG, BPG, ECOBANK, ORABANK
+  accountNumber     String
+  accountName       String
+  currency          String    @default("GNF")
+  type              String    @default("CHECKING") // CHECKING, SAVINGS, BUSINESS
+  iban              String?
+  bic               String?
+  soldeActuel       Int?
+  soldeDisponible   Int?
+  derniereSynchro   DateTime?
+  actif             Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([companyId, accountNumber])
+  @@index([companyId])
+  @@index([bankCode])
+}
+
+model BankCredential {
+  id            String   @id @default(cuid())
+  companyId     String
+  bankCode      String
+  clientId      String
+  clientSecret  String   // TODO: Encrypt in production
+  merchantId    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, bankCode])
+  @@index([companyId])
+}
+
+model VirementBancaire {
+  id              String    @id @default(cuid())
+  companyId       String
+  fromAccountId   String
+  toAccount       String
+  toBank          String?
+  amount          Int
+  currency        String    @default("GNF")
+  reference       String
+  description     String?
+  beneficiaryName String?
+  transactionId   String?   @unique
+  status          String    @default("PENDING")
+  scheduledAt     DateTime?
+  processedAt     DateTime?
+  error           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([fromAccountId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+model TransactionBancaire {
+  id              String    @id @default(cuid())
+  companyId       String
+  compteBancaireId String
+  reference       String
+  type            String    // CREDIT, DEBIT
+  amount          Int
+  currency        String    @default("GNF")
+  description     String?
+  dateTransaction DateTime
+  dateValeur      DateTime?
+  contrepartie    String?
+  compteContrepartie String?
+  categorie       String?
+  status          String    @default("COMPLETED")
+  reconcilie      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  @@unique([compteBancaireId, reference])
+  @@index([companyId])
+  @@index([compteBancaireId])
+  @@index([dateTransaction])
+  @@index([reconcilie])
+}

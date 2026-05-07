@@ -9,11 +9,14 @@ router.use(authMiddleware);
 const produitSchema = z.object({
   nom: z.string().min(1, 'Nom requis'),
   description: z.string().optional(),
-  prixUnitaire: z.number().int().min(0),
+  reference: z.string().optional(),
+  prixUnitaire: z.number().min(0),
   unite: z.string().default('Unité'),
-  stockActuel: z.number().int().min(0).default(0),
-  stockMin: z.number().int().min(0).default(0),
+  stockActuel: z.number().min(0).default(0),
+  stockMin: z.number().min(0).default(0),
   categorie: z.string().optional(),
+  tva: z.number().min(0).max(100).default(18),
+  type: z.enum(['PRODUIT', 'SERVICE']).default('PRODUIT'),
   actif: z.boolean().default(true)
 });
 
@@ -110,9 +113,17 @@ router.post('/', async (req: Request, res: Response) => {
 
     const produit = await prisma.produit.create({
       data: {
-        ...data,
+        nom: data.nom,
         description: data.description || null,
+        reference: data.reference || null,
+        prixUnitaire: data.prixUnitaire,
+        unite: data.unite,
+        stockActuel: data.stockActuel,
+        stockMin: data.stockMin,
         categorie: data.categorie || null,
+        tva: data.tva ?? 18,
+        type: data.type ?? 'PRODUIT',
+        actif: data.actif,
         companyId: req.user!.companyId
       }
     });

@@ -90,6 +90,9 @@ export interface Produit {
   stockActuel: number;
   stockMin: number;
   categorie?: string;
+  tva: number; // Taux de TVA en pourcentage (ex: 18 pour 18%)
+  type?: 'PRODUIT' | 'SERVICE';
+  reference?: string;
   actif: boolean;
   createdAt: string;
 }
@@ -226,6 +229,9 @@ export interface ProduitFormData {
   stockActuel: number;
   stockMin: number;
   categorie?: string;
+  tva?: number; // Taux de TVA en pourcentage (défaut: 18)
+  type?: 'PRODUIT' | 'SERVICE';
+  reference?: string;
 }
 
 export interface FactureFormData {

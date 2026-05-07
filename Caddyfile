@@ -1,23 +1,71 @@
-:81 {
-	@transform_port_query {
-		query XTransformPort=*
-	}
+# GuinéaManager ERP - Caddyfile for Production
+# Automatic HTTPS with Let's Encrypt
 
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+# Replace guineamanager.com with your actual domain
+{$DOMAIN:guineamanager.com} {
+    # Automatic SSL with Let's Encrypt
+    # For production, uncomment the email line below
+    # tls your-email@example.com
+    
+    # For staging/testing (use this first to avoid rate limits)
+    tls internal
+    
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent clickjacking
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        # Remove server header
+        -Server
+    }
+    
+    # API Backend - proxy to port 3001
+    handle /api/* {
+        reverse_proxy app:3001 {
+            # Timeouts
+            transport http {
+                read_timeout 300s
+                write_timeout 300s
+                dial_timeout 30s
+            }
+            # Buffer limits for large uploads
+            flush_interval -1
+        }
+    }
+    
+    # Frontend - proxy to port 3000
+    handle {
+        reverse_proxy app:3000 {
+            # Timeouts
+            transport http {
+                read_timeout 300s
+                write_timeout 300s
+                dial_timeout 30s
+            }
+        }
+    }
+    
+    # Compression
+    encode gzip zstd
+    
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+        format json
+    }
+}
 
-	handle {
-		reverse_proxy localhost:3000 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+# Health check endpoint (no SSL required)
+:8080 {
+    handle /health {
+        respond "OK" 200
+    }
 }

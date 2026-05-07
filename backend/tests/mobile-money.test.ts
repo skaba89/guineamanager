@@ -361,7 +361,7 @@ describe('Paiements Mobile Money', () => {
 
   describe('Validation des donn�es', () => {
     it('devrait valider le format du num�ro de t�l�phone guin�en', () => {
-      const phoneRegex = /^\+224(62|66|64|65|61|55)\d{6}$/;
+      const phoneRegex = /^\+224(62|66|64|65|61|55)\d{7}$/;
       
       // Num�ros valides
       expect(phoneRegex.test('+224620000000')).toBe(true); // Orange

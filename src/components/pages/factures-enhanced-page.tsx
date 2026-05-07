@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, FileText, Eye, Send, CheckCircle, Clock, 
-  AlertCircle, Download, Printer, Mail, Copy, MoreHorizontal, DollarSign
+  AlertCircle, Download, Printer, Copy, X, Package, Calculator
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -35,13 +36,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -50,100 +44,224 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppStore } from '@/stores/auth-store';
 import { formatGNF, formatDate } from '@/lib/mock-data';
-import { Facture } from '@/types';
-import { cn } from '@/lib/utils';
+import { Facture, Produit, LigneFacture } from '@/types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Factures');
 
 const statuts = [
-  { value: 'BROUILLON', label: 'Brouillon', color: 'secondary', icon: FileText },
-  { value: 'ENVOYEE', label: 'Envoyée', color: 'default', icon: Send },
-  { value: 'PAYEE', label: 'Payée', color: 'success', icon: CheckCircle },
-  { value: 'EN_RETARD', label: 'En retard', color: 'destructive', icon: AlertCircle },
-  { value: 'ANNULEE', label: 'Annulée', color: 'outline', icon: FileText },
+  { value: 'brouillon', label: 'Brouillon', color: 'secondary' },
+  { value: 'envoyee', label: 'Envoyée', color: 'default' },
+  { value: 'payee', label: 'Payée', color: 'success' },
+  { value: 'en_retard', label: 'En retard', color: 'destructive' },
+  { value: 'annulee', label: 'Annulée', color: 'outline' },
 ];
 
 const modesPaiement = [
-  { value: 'ESPECES', label: 'Espèces' },
-  { value: 'VIREMENT', label: 'Virement bancaire' },
-  { value: 'ORANGE_MONEY', label: 'Orange Money' },
-  { value: 'MTN_MONEY', label: 'MTN Money' },
-  { value: 'CHEQUE', label: 'Chèque' },
+  { value: 'especes', label: 'Espèces' },
+  { value: 'virement', label: 'Virement bancaire' },
+  { value: 'orange_money', label: 'Orange Money' },
+  { value: 'mtn_money', label: 'MTN Money' },
+  { value: 'cheque', label: 'Chèque' },
+  { value: 'carte', label: 'Carte bancaire' },
 ];
 
+// Taux de TVA disponibles
+const tauxTVA = [
+  { value: 0, label: '0%' },
+  { value: 7, label: '7%' },
+  { value: 9, label: '9%' },
+  { value: 18, label: '18%' },
+  { value: 19, label: '19%' },
+  { value: 20, label: '20%' },
+];
+
+interface LigneFactureForm {
+  id: string;
+  produitId?: string;
+  description: string;
+  quantite: number;
+  prixUnitaire: number;
+  tauxTVA: number;
+  modeSaisie: 'HT' | 'TTC'; // Nouveau: choix du mode de saisie
+}
+
+interface FactureFormData {
+  clientId: string;
+  dateEmission: string;
+  dateEcheance: string;
+  lignes: LigneFactureForm[];
+  modePaiement: string;
+  notes: string;
+  conditions: string;
+}
+
+const generateId = () => Math.random().toString(36).substring(2, 15);
+
+const createEmptyLigne = (): LigneFactureForm => ({
+  id: generateId(),
+  description: '',
+  quantite: 1,
+  prixUnitaire: 0,
+  tauxTVA: 18,
+  modeSaisie: 'HT',
+});
+
 export function FacturesEnhancedPage() {
-  const { factures, clients, addFacture, updateFacture, deleteFacture } = useAppStore();
+  const { 
+    factures, clients, produits, 
+    fetchFactures, fetchClients, fetchProduits,
+    addFacture, updateFactureStatut, deleteFacture 
+  } = useAppStore();
+  
   const [search, setSearch] = useState('');
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingFacture, setEditingFacture] = useState<Facture | null>(null);
   const [viewingFacture, setViewingFacture] = useState<Facture | null>(null);
-  const [formData, setFormData] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState<FactureFormData>({
     clientId: '',
     dateEmission: new Date().toISOString().split('T')[0],
-    dateEcheance: '',
-    montantHT: 0,
-    montantTVA: 0,
-    montantTTC: 0,
-    statut: 'BROUILLON' as Facture['statut'],
-    modePaiement: 'VIREMENT' as Facture['modePaiement'],
-    notes: ''
+    dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    lignes: [createEmptyLigne()],
+    modePaiement: 'virement',
+    notes: '',
+    conditions: 'Paiement à réception de facture',
   });
 
+  // Charger les données au montage
+  useEffect(() => {
+    fetchFactures();
+    fetchClients();
+    fetchProduits();
+  }, [fetchFactures, fetchClients, fetchProduits]);
+
   const filteredFactures = factures.filter(f => {
-    const matchSearch = f.numero.toLowerCase().includes(search.toLowerCase()) ||
-      f.client?.nom.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = f.numero?.toLowerCase().includes(search.toLowerCase()) ||
+      f.client?.nom?.toLowerCase().includes(search.toLowerCase());
     const matchStatut = filterStatut === 'all' || f.statut === filterStatut;
     return matchSearch && matchStatut;
   });
 
-  const handleSubmit = () => {
-    const client = clients.find(c => c.id === formData.clientId);
-    const factureData = {
-      ...formData,
-      client,
-      lignes: []
-    };
+  // Calcul des totaux à partir des lignes
+  const calculs = useMemo(() => {
+    let montantHT = 0;
+    let montantTVA = 0;
 
-    if (editingFacture) {
-      updateFacture(editingFacture.id, factureData);
-    } else {
-      addFacture(factureData);
+    formData.lignes.forEach(ligne => {
+      let prixHT = ligne.prixUnitaire;
+      
+      // Si le prix est saisi en TTC, on le convertit en HT
+      if (ligne.modeSaisie === 'TTC' && ligne.tauxTVA > 0) {
+        prixHT = Math.round(ligne.prixUnitaire / (1 + ligne.tauxTVA / 100));
+      }
+      
+      const ligneHT = Math.round(prixHT * ligne.quantite);
+      const ligneTVA = Math.round(ligneHT * ligne.tauxTVA / 100);
+      
+      montantHT += ligneHT;
+      montantTVA += ligneTVA;
+    });
+
+    return {
+      montantHT,
+      montantTVA,
+      montantTTC: montantHT + montantTVA,
+    };
+  }, [formData.lignes]);
+
+  const handleAddLigne = () => {
+    setFormData({
+      ...formData,
+      lignes: [...formData.lignes, createEmptyLigne()],
+    });
+  };
+
+  const handleRemoveLigne = (index: number) => {
+    if (formData.lignes.length > 1) {
+      const newLignes = formData.lignes.filter((_, i) => i !== index);
+      setFormData({ ...formData, lignes: newLignes });
     }
-    setIsDialogOpen(false);
-    resetForm();
+  };
+
+  const handleLigneChange = (index: number, field: keyof LigneFactureForm, value: any) => {
+    const newLignes = [...formData.lignes];
+    newLignes[index] = { ...newLignes[index], [field]: value };
+    setFormData({ ...formData, lignes: newLignes });
+  };
+
+  const handleProduitSelect = (index: number, produitId: string) => {
+    const produit = produits.find(p => p.id === produitId);
+    if (produit) {
+      const newLignes = [...formData.lignes];
+      newLignes[index] = {
+        ...newLignes[index],
+        produitId: produit.id,
+        description: produit.nom,
+        prixUnitaire: produit.prixUnitaire,
+        tauxTVA: produit.tva ?? 18,
+        modeSaisie: 'HT',
+      };
+      setFormData({ ...formData, lignes: newLignes });
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.clientId) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Préparer les données pour le backend
+      const factureData = {
+        clientId: formData.clientId,
+        dateEmission: formData.dateEmission,
+        dateEcheance: formData.dateEcheance,
+        modePaiement: formData.modePaiement,
+        notes: formData.notes,
+        lignes: formData.lignes.map(ligne => {
+          let prixHT = ligne.prixUnitaire;
+          if (ligne.modeSaisie === 'TTC' && ligne.tauxTVA > 0) {
+            prixHT = Math.round(ligne.prixUnitaire / (1 + ligne.tauxTVA / 100));
+          }
+          return {
+            produitId: ligne.produitId,
+            description: ligne.description,
+            quantite: ligne.quantite,
+            prixUnitaire: prixHT,
+            tauxTVA: ligne.tauxTVA,
+          };
+        }),
+      };
+
+      await addFacture(factureData);
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      logger.error('Erreur lors de la création:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setFormData({
       clientId: '',
       dateEmission: new Date().toISOString().split('T')[0],
-      dateEcheance: '',
-      montantHT: 0,
-      montantTVA: 0,
-      montantTTC: 0,
-      statut: 'BROUILLON',
-      modePaiement: 'VIREMENT',
-      notes: ''
+      dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      lignes: [createEmptyLigne()],
+      modePaiement: 'virement',
+      notes: '',
+      conditions: 'Paiement à réception de facture',
     });
     setEditingFacture(null);
-  };
-
-  const openEditDialog = (facture: Facture) => {
-    setEditingFacture(facture);
-    setFormData({
-      clientId: facture.clientId,
-      dateEmission: facture.dateEmission,
-      dateEcheance: facture.dateEcheance,
-      montantHT: facture.montantHT,
-      montantTVA: facture.montantTVA,
-      montantTTC: facture.montantTTC,
-      statut: facture.statut,
-      modePaiement: facture.modePaiement || 'VIREMENT',
-      notes: facture.notes || ''
-    });
-    setIsDialogOpen(true);
   };
 
   const openViewDialog = (facture: Facture) => {
@@ -151,18 +269,12 @@ export function FacturesEnhancedPage() {
     setIsViewDialogOpen(true);
   };
 
-  const handleMontantChange = (montantHT: number) => {
-    const montantTVA = Math.round(montantHT * 0.18);
-    const montantTTC = montantHT + montantTVA;
-    setFormData({ ...formData, montantHT, montantTVA, montantTTC });
-  };
-
   const getStatutBadge = (statut: Facture['statut']) => {
     const config = statuts.find(s => s.value === statut);
     return (
       <Badge 
         variant={config?.color as "default" | "secondary" | "destructive" | "outline"}
-        className={statut === 'PAYEE' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+        className={statut === 'payee' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
       >
         {config?.label}
       </Badge>
@@ -171,19 +283,18 @@ export function FacturesEnhancedPage() {
 
   const stats = {
     total: factures.length,
-    payees: factures.filter(f => f.statut === 'PAYEE').length,
-    enAttente: factures.filter(f => f.statut === 'ENVOYEE' || f.statut === 'BROUILLON').length,
-    enRetard: factures.filter(f => f.statut === 'EN_RETARD').length,
-    totalMontant: factures.reduce((acc, f) => acc + f.montantTTC, 0),
-    totalPaye: factures.filter(f => f.statut === 'PAYEE').reduce((acc, f) => acc + f.montantTTC, 0),
+    payees: factures.filter(f => f.statut === 'payee').length,
+    enAttente: factures.filter(f => f.statut === 'envoyee' || f.statut === 'brouillon').length,
+    enRetard: factures.filter(f => f.statut === 'en_retard').length,
+    totalMontant: factures.reduce((acc, f) => acc + (f.montantTTC || 0), 0),
+    totalPaye: factures.filter(f => f.statut === 'payee').reduce((acc, f) => acc + (f.montantTTC || 0), 0),
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-blue-500" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -191,13 +302,12 @@ export function FacturesEnhancedPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Total factures</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-emerald-500" />
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-100 rounded-lg">
@@ -205,13 +315,12 @@ export function FacturesEnhancedPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Payées</p>
-                <p className="text-2xl font-bold">{stats.payees}</p>
+                <p className="text-xl font-bold">{stats.payees}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-amber-500" />
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
@@ -219,13 +328,12 @@ export function FacturesEnhancedPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">En attente</p>
-                <p className="text-2xl font-bold">{stats.enAttente}</p>
+                <p className="text-xl font-bold">{stats.enAttente}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-red-500" />
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
@@ -233,38 +341,16 @@ export function FacturesEnhancedPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">En retard</p>
-                <p className="text-2xl font-bold">{stats.enRetard}</p>
+                <p className="text-xl font-bold">{stats.enRetard}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Revenue Summary */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-sm text-slate-500">Total facturé</p>
-              <p className="text-2xl font-bold text-slate-900">{formatGNF(stats.totalMontant)}</p>
-            </div>
-            <div className="h-12 w-px bg-slate-200 hidden sm:block" />
-            <div>
-              <p className="text-sm text-slate-500">Total encaissé</p>
-              <p className="text-2xl font-bold text-emerald-600">{formatGNF(stats.totalPaye)}</p>
-            </div>
-            <div className="h-12 w-px bg-slate-200 hidden sm:block" />
-            <div>
-              <p className="text-sm text-slate-500">En attente de paiement</p>
-              <p className="text-2xl font-bold text-amber-600">{formatGNF(stats.totalMontant - stats.totalPaye)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-3 flex-1">
+        <div className="flex gap-4 flex-1">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -286,19 +372,110 @@ export function FacturesEnhancedPage() {
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle facture
-          </Button>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingFacture ? 'Modifier la facture' : 'Nouvelle facture'}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
+        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle facture
+        </Button>
+      </div>
+
+      {/* Factures Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{filteredFactures.length} facture(s)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredFactures.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucune facture trouvée</p>
+              <Button variant="outline" className="mt-4" onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Créer une facture
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N° Facture</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Échéance</TableHead>
+                  <TableHead className="text-right">Montant HT</TableHead>
+                  <TableHead className="text-right">TVA</TableHead>
+                  <TableHead className="text-right">Montant TTC</TableHead>
+                  <TableHead className="text-center">Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFactures.map((facture) => (
+                  <TableRow key={facture.id}>
+                    <TableCell className="font-medium">{facture.numero}</TableCell>
+                    <TableCell>{facture.client?.nom || '-'}</TableCell>
+                    <TableCell>{formatDate(facture.dateEmission)}</TableCell>
+                    <TableCell>{formatDate(facture.dateEcheance)}</TableCell>
+                    <TableCell className="text-right">{formatGNF(facture.montantHT)}</TableCell>
+                    <TableCell className="text-right">{formatGNF(facture.montantTVA)}</TableCell>
+                    <TableCell className="text-right font-semibold text-emerald-600">{formatGNF(facture.montantTTC)}</TableCell>
+                    <TableCell className="text-center">{getStatutBadge(facture.statut)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(facture)} title="Voir">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Supprimer la facture ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir supprimer la facture {facture.numero} ?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-red-600 hover:bg-red-700"
+                                onClick={async () => {
+                                  await deleteFacture(facture.id);
+                                }}
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Nouvelle facture</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Client et dates */}
+            <div className="grid grid-cols-3 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="client">Client *</Label>
-                <Select value={formData.clientId} onValueChange={(value) => setFormData({...formData, clientId: value})}>
+                <Label>Client *</Label>
+                <Select 
+                  value={formData.clientId} 
+                  onValueChange={(value) => setFormData({...formData, clientId: value})}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un client" />
                   </SelectTrigger>
@@ -309,62 +486,161 @@ export function FacturesEnhancedPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="dateEmission">Date d'émission</Label>
-                  <Input
-                    id="dateEmission"
-                    type="date"
-                    value={formData.dateEmission}
-                    onChange={(e) => setFormData({...formData, dateEmission: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dateEcheance">Date d'échéance</Label>
-                  <Input
-                    id="dateEcheance"
-                    type="date"
-                    value={formData.dateEcheance}
-                    onChange={(e) => setFormData({...formData, dateEcheance: e.target.value})}
-                  />
-                </div>
-              </div>
               <div className="grid gap-2">
-                <Label htmlFor="montantHT">Montant HT (GNF)</Label>
+                <Label>Date d'émission</Label>
                 <Input
-                  id="montantHT"
-                  type="number"
-                  value={formData.montantHT}
-                  onChange={(e) => handleMontantChange(parseInt(e.target.value) || 0)}
+                  type="date"
+                  value={formData.dateEmission}
+                  onChange={(e) => setFormData({...formData, dateEmission: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg">
-                <div>
-                  <p className="text-sm text-slate-500">TVA (18%)</p>
-                  <p className="font-semibold">{formatGNF(formData.montantTVA)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Montant TTC</p>
-                  <p className="font-bold text-emerald-600">{formatGNF(formData.montantTTC)}</p>
-                </div>
+              <div className="grid gap-2">
+                <Label>Date d'échéance</Label>
+                <Input
+                  type="date"
+                  value={formData.dateEcheance}
+                  onChange={(e) => setFormData({...formData, dateEcheance: e.target.value})}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+            </div>
+
+            {/* Lignes de facture */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Lignes de facture</Label>
+                <Button variant="outline" size="sm" onClick={handleAddLigne}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter une ligne
+                </Button>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="w-[250px]">Produit / Description</TableHead>
+                      <TableHead className="w-[80px]">Qté</TableHead>
+                      <TableHead className="w-[120px]">Prix</TableHead>
+                      <TableHead className="w-[80px]">Saisie</TableHead>
+                      <TableHead className="w-[80px]">TVA</TableHead>
+                      <TableHead className="w-[100px]">Total HT</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formData.lignes.map((ligne, index) => {
+                      let prixHT = ligne.prixUnitaire;
+                      if (ligne.modeSaisie === 'TTC' && ligne.tauxTVA > 0) {
+                        prixHT = Math.round(ligne.prixUnitaire / (1 + ligne.tauxTVA / 100));
+                      }
+                      const totalHT = Math.round(prixHT * ligne.quantite);
+                      
+                      return (
+                        <TableRow key={ligne.id}>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Select
+                                value={ligne.produitId || ''}
+                                onValueChange={(value) => handleProduitSelect(index, value)}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue placeholder="Choisir un produit..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">-- Saisie libre --</SelectItem>
+                                  {produits.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>
+                                      {p.nom} - {formatGNF(p.prixUnitaire)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                placeholder="Description (libellé)"
+                                value={ligne.description}
+                                onChange={(e) => handleLigneChange(index, 'description', e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={ligne.quantite}
+                              onChange={(e) => handleLigneChange(index, 'quantite', parseInt(e.target.value) || 1)}
+                              className="h-9 w-20"
+                              min="1"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={ligne.prixUnitaire}
+                              onChange={(e) => handleLigneChange(index, 'prixUnitaire', parseInt(e.target.value) || 0)}
+                              className="h-9 w-28"
+                              placeholder="GNF"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={ligne.modeSaisie}
+                              onValueChange={(value: 'HT' | 'TTC') => handleLigneChange(index, 'modeSaisie', value)}
+                            >
+                              <SelectTrigger className="h-9 w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="HT">HT</SelectItem>
+                                <SelectItem value="TTC">TTC</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={ligne.tauxTVA.toString()}
+                              onValueChange={(value) => handleLigneChange(index, 'tauxTVA', parseInt(value))}
+                            >
+                              <SelectTrigger className="h-9 w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tauxTVA.map(t => (
+                                  <SelectItem key={t.value} value={t.value.toString()}>{t.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="font-medium text-right">
+                            {formatGNF(totalHT)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-600 hover:text-red-700"
+                              onClick={() => handleRemoveLigne(index)}
+                              disabled={formData.lignes.length === 1}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Récapitulatif */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="statut">Statut</Label>
-                  <Select value={formData.statut} onValueChange={(value) => setFormData({...formData, statut: value as Facture['statut']})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statuts.map(s => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="modePaiement">Mode de paiement</Label>
-                  <Select value={formData.modePaiement} onValueChange={(value) => setFormData({...formData, modePaiement: value as Facture['modePaiement']})}>
+                  <Label>Mode de paiement</Label>
+                  <Select 
+                    value={formData.modePaiement} 
+                    onValueChange={(value) => setFormData({...formData, modePaiement: value})}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -375,103 +651,55 @@ export function FacturesEnhancedPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    placeholder="Notes internes..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows={2}
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Input
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Notes ou remarques..."
-                />
-              </div>
+              
+              <Card className="bg-slate-50">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total HT</span>
+                    <span className="font-medium">{formatGNF(calculs.montantHT)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">TVA</span>
+                    <span className="font-medium">{formatGNF(calculs.montantTVA)}</span>
+                  </div>
+                  <div className="border-t pt-3 flex justify-between">
+                    <span className="font-semibold text-lg">Total TTC</span>
+                    <span className="font-bold text-xl text-emerald-600">{formatGNF(calculs.montantTTC)}</span>
+                  </div>
+                  <p className="text-xs text-slate-400 text-right">
+                    Arrondi au franc guinéen le plus proche
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>
-                {editingFacture ? 'Modifier' : 'Créer'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
 
-      {/* Factures Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{filteredFactures.length} facture(s)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>N° Facture</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Échéance</TableHead>
-                <TableHead className="text-right">Montant TTC</TableHead>
-                <TableHead className="text-center">Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFactures.map((facture) => (
-                <TableRow key={facture.id} className="group">
-                  <TableCell className="font-medium">{facture.numero}</TableCell>
-                  <TableCell>{facture.client?.nom || '-'}</TableCell>
-                  <TableCell>{formatDate(facture.dateEmission)}</TableCell>
-                  <TableCell>{formatDate(facture.dateEcheance)}</TableCell>
-                  <TableCell className="text-right font-semibold">{formatGNF(facture.montantTTC)}</TableCell>
-                  <TableCell className="text-center">{getStatutBadge(facture.statut)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(facture)} title="Voir">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(facture)} title="Modifier">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Download className="w-4 h-4 mr-2" />
-                            Télécharger PDF
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Printer className="w-4 h-4 mr-2" />
-                            Imprimer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Mail className="w-4 h-4 mr-2" />
-                            Envoyer par email
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => deleteFacture(facture.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700" 
+              onClick={handleSubmit}
+              disabled={!formData.clientId || formData.lignes.every(l => !l.description) || isSubmitting}
+            >
+              {isSubmitting ? 'Création...' : 'Créer la facture'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Détails de la facture</DialogTitle>
           </DialogHeader>
@@ -484,6 +712,35 @@ export function FacturesEnhancedPage() {
                 </div>
                 <p className="text-slate-500">Client: {viewingFacture.client?.nom}</p>
               </div>
+              
+              {/* Lignes de facture */}
+              {viewingFacture.lignes && viewingFacture.lignes.length > 0 && (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-center">Qté</TableHead>
+                        <TableHead className="text-right">P.U. HT</TableHead>
+                        <TableHead className="text-center">TVA</TableHead>
+                        <TableHead className="text-right">Total HT</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {viewingFacture.lignes.map((ligne, idx) => (
+                        <TableRow key={ligne.id || idx}>
+                          <TableCell>{ligne.description}</TableCell>
+                          <TableCell className="text-center">{ligne.quantite}</TableCell>
+                          <TableCell className="text-right">{formatGNF(ligne.prixUnitaire)}</TableCell>
+                          <TableCell className="text-center">{ligne.tauxTVA}%</TableCell>
+                          <TableCell className="text-right">{formatGNF(ligne.montantHT)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-slate-500">Date d'émission</p>
@@ -494,13 +751,14 @@ export function FacturesEnhancedPage() {
                   <p className="font-medium">{formatDate(viewingFacture.dateEcheance)}</p>
                 </div>
               </div>
+              
               <div className="border-t pt-4">
                 <div className="flex justify-between mb-2">
                   <span className="text-slate-500">Montant HT</span>
                   <span className="font-medium">{formatGNF(viewingFacture.montantHT)}</span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-slate-500">TVA (18%)</span>
+                  <span className="text-slate-500">TVA</span>
                   <span className="font-medium">{formatGNF(viewingFacture.montantTVA)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
@@ -508,12 +766,19 @@ export function FacturesEnhancedPage() {
                   <span className="text-emerald-600">{formatGNF(viewingFacture.montantTTC)}</span>
                 </div>
               </div>
+              
               {viewingFacture.modePaiement && (
                 <div>
                   <p className="text-sm text-slate-500">Mode de paiement</p>
                   <p className="font-medium">
                     {modesPaiement.find(m => m.value === viewingFacture.modePaiement)?.label}
                   </p>
+                </div>
+              )}
+              {viewingFacture.notes && (
+                <div>
+                  <p className="text-sm text-slate-500">Notes</p>
+                  <p className="font-medium">{viewingFacture.notes}</p>
                 </div>
               )}
             </div>
@@ -523,5 +788,3 @@ export function FacturesEnhancedPage() {
     </div>
   );
 }
-
-export default FacturesEnhancedPage;

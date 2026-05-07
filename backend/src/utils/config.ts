@@ -1,10 +1,20 @@
 // Configuration GuinéaManager
 
-import dotenv from 'dotenv';
 import path from 'path';
 import { z } from 'zod';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Only load .env file in development (in production, env vars are set by Docker)
+// Use dynamic require to avoid bundling dotenv in production
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const dotenv = require('dotenv');
+    dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  } catch {
+    // dotenv not available, use environment variables directly
+    console.log('dotenv not available, using environment variables directly');
+  }
+}
 
 // Schema de validation de la configuration
 const configSchema = z.object({

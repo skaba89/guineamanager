@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -41,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useAppStore } from '@/stores/auth-store';
 import { formatGNF } from '@/lib/mock-data';
 import { Produit } from '@/types';
@@ -53,10 +55,29 @@ const categories = [
   'Mobilier',
   'Équipements',
   'Services',
+  'Alimentation',
+  'Vêtements',
+  'Bâtiment',
+  'Transport',
   'Autres'
 ];
 
-const unites = ['Unité', 'Pack', 'Ramette', 'Carton', 'Kg', 'Litre', 'Mètre', 'Heure'];
+const unites = ['Unité', 'Pack', 'Ramette', 'Carton', 'Kg', 'Litre', 'Mètre', 'Heure', 'Forfait', 'M²', 'M³'];
+
+// Taux de TVA courants en Guinée et Afrique de l'Ouest
+const tauxTVA = [
+  { value: 0, label: '0% - Exonéré' },
+  { value: 7, label: '7% - Taux réduit' },
+  { value: 9, label: '9% - Taux réduit (CEMAC)' },
+  { value: 18, label: '18% - Taux normal (Guinée)' },
+  { value: 19, label: '19% - Taux normal (Sénégal)' },
+  { value: 20, label: '20% - Taux normal (CEDEAO)' },
+];
+
+const typesProduit = [
+  { value: 'PRODUIT', label: 'Produit' },
+  { value: 'SERVICE', label: 'Service' },
+];
 
 // TVA rates for West Africa
 const tvaRates = [
@@ -81,7 +102,9 @@ export function ProduitsPage() {
     stockActuel: 0,
     stockMin: 0,
     categorie: '',
-    tva: 0.18
+    tva: 0.18,
+    type: 'PRODUIT' as 'PRODUIT' | 'SERVICE',
+    reference: '',
   });
 
   // Charger les produits au montage
@@ -96,7 +119,9 @@ export function ProduitsPage() {
 
   const filteredProduits = produits.filter(p => 
     p.nom.toLowerCase().includes(search.toLowerCase()) ||
-    p.categorie?.toLowerCase().includes(search.toLowerCase())
+    p.categorie?.toLowerCase().includes(search.toLowerCase()) ||
+    p.description?.toLowerCase().includes(search.toLowerCase()) ||
+    p.reference?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = async () => {
@@ -166,7 +191,9 @@ export function ProduitsPage() {
       stockActuel: 0,
       stockMin: 0,
       categorie: '',
-      tva: 0.18
+      tva: 0.18,
+      type: 'PRODUIT',
+      reference: '',
     });
     setEditingProduit(null);
   };
@@ -181,8 +208,15 @@ export function ProduitsPage() {
       stockActuel: produit.stockActuel,
       stockMin: produit.stockMin,
       categorie: produit.categorie || '',
-      tva: produit.tva || 0.18
+      tva: produit.tva || 0.18,
+      type: produit.type || 'PRODUIT',
+      reference: produit.reference || '',
     });
+    setIsDialogOpen(true);
+  };
+
+  const openCreateDialog = () => {
+    resetForm();
     setIsDialogOpen(true);
   };
 
@@ -206,6 +240,11 @@ export function ProduitsPage() {
     if (produit.stockActuel === 0) return { label: 'Rupture', color: 'destructive' };
     if (produit.stockActuel <= produit.stockMin) return { label: 'Stock bas', color: 'warning' };
     return { label: 'OK', color: 'success' };
+  };
+
+  // Calculer le prix TTC
+  const getPrixTTC = (prixHT: number, tva: number) => {
+    return Math.round(prixHT * (1 + tva));
   };
 
   return (
@@ -246,7 +285,7 @@ export function ProduitsPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Catégories</p>
-                <p className="text-xl font-bold">{new Set(produits.map(p => p.categorie)).size}</p>
+                <p className="text-xl font-bold">{new Set(produits.map(p => p.categorie).filter(Boolean)).size}</p>
               </div>
             </div>
           </CardContent>
@@ -277,122 +316,10 @@ export function ProduitsPage() {
             className="pl-10"
           />
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau produit
-          </Button>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingProduit ? 'Modifier le produit' : 'Nouveau produit'}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="nom">Nom *</Label>
-                <Input
-                  id="nom"
-                  value={formData.nom}
-                  onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                  placeholder="Nom du produit"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Description courte"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="prix">Prix unitaire (GNF)</Label>
-                  <Input
-                    id="prix"
-                    type="number"
-                    value={formData.prixUnitaire}
-                    onChange={(e) => setFormData({...formData, prixUnitaire: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="tva">TVA</Label>
-                  <Select value={String(formData.tva)} onValueChange={(value) => setFormData({...formData, tva: parseFloat(value)})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tvaRates.map(rate => (
-                        <SelectItem key={rate.value} value={String(rate.value)}>{rate.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="unite">Unité</Label>
-                  <Select value={formData.unite} onValueChange={(value) => setFormData({...formData, unite: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {unites.map(u => (
-                        <SelectItem key={u} value={u}>{u}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="categorie">Catégorie</Label>
-                  <Select value={formData.categorie} onValueChange={(value) => setFormData({...formData, categorie: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="stockActuel">Stock actuel</Label>
-                  <Input
-                    id="stockActuel"
-                    type="number"
-                    value={formData.stockActuel}
-                    onChange={(e) => setFormData({...formData, stockActuel: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="stockMin">Stock minimum</Label>
-                  <Input
-                    id="stockMin"
-                    type="number"
-                    value={formData.stockMin}
-                    onChange={(e) => setFormData({...formData, stockMin: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
-                Annuler
-              </Button>
-              <Button 
-                className="bg-emerald-600 hover:bg-emerald-700" 
-                onClick={handleSubmit}
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingProduit ? 'Modifier' : 'Créer'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={openCreateDialog}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nouveau produit
+        </Button>
       </div>
 
       {/* Products Table */}
@@ -417,8 +344,11 @@ export function ProduitsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Produit</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Catégorie</TableHead>
-                  <TableHead className="text-right">Prix unitaire</TableHead>
+                  <TableHead className="text-right">Prix HT</TableHead>
+                  <TableHead className="text-right">TVA</TableHead>
+                  <TableHead className="text-right">Prix TTC</TableHead>
                   <TableHead className="text-center">Stock</TableHead>
                   <TableHead className="text-center">Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -427,13 +357,24 @@ export function ProduitsPage() {
               <TableBody>
                 {filteredProduits.map((produit) => {
                   const stockStatus = getStockStatus(produit);
+                  const prixTTC = getPrixTTC(produit.prixUnitaire, produit.tva ?? 0.18);
                   return (
                     <TableRow key={produit.id}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{produit.nom}</p>
-                          <p className="text-sm text-slate-500">{produit.description}</p>
+                          {produit.reference && (
+                            <p className="text-xs text-slate-400">Réf: {produit.reference}</p>
+                          )}
+                          {produit.description && (
+                            <p className="text-sm text-slate-500 truncate max-w-xs">{produit.description}</p>
+                          )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={produit.type === 'SERVICE' ? 'bg-purple-50' : 'bg-blue-50'}>
+                          {produit.type === 'SERVICE' ? 'Service' : 'Produit'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{produit.categorie || 'Non classé'}</Badge>
@@ -441,11 +382,17 @@ export function ProduitsPage() {
                       <TableCell className="text-right font-medium">
                         {formatGNF(produit.prixUnitaire)} / {produit.unite}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="secondary">{((produit.tva ?? 0.18) * 100).toFixed(0)}%</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-emerald-600">
+                        {formatGNF(prixTTC)}
+                      </TableCell>
                       <TableCell>
                         <div className="text-center">
                           <p className="font-medium">{produit.stockActuel}</p>
                           <Progress 
-                            value={Math.min((produit.stockActuel / (produit.stockMin * 3)) * 100, 100)} 
+                            value={Math.min((produit.stockActuel / (produit.stockMin * 3 || 1)) * 100, 100)} 
                             className="w-16 h-1.5 mx-auto mt-1"
                           />
                           <p className="text-xs text-slate-500">Min: {produit.stockMin}</p>
@@ -474,7 +421,7 @@ export function ProduitsPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Supprimer le produit ?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Êtes-vous sûr de vouloir supprimer {produit.nom} ?
+                                  Êtes-vous sûr de vouloir supprimer {produit.nom} ? Cette action est irréversible.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -498,6 +445,184 @@ export function ProduitsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingProduit ? 'Modifier le produit' : 'Nouveau produit'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Informations générales */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="nom">Nom du produit *</Label>
+                <Input
+                  id="nom"
+                  value={formData.nom}
+                  onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                  placeholder="Ex: Stylo bic bleu"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="reference">Référence</Label>
+                <Input
+                  id="reference"
+                  value={formData.reference}
+                  onChange={(e) => setFormData({...formData, reference: e.target.value})}
+                  placeholder="Ex: REF-001"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Description détaillée du produit..."
+                rows={2}
+              />
+            </div>
+
+            {/* Type et Catégorie */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="type">Type</Label>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(value: 'PRODUIT' | 'SERVICE') => setFormData({...formData, type: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typesProduit.map(t => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="categorie">Catégorie</Label>
+                <Select 
+                  value={formData.categorie} 
+                  onValueChange={(value) => setFormData({...formData, categorie: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Prix et TVA */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="prixHT">Prix HT (GNF)</Label>
+                <Input
+                  id="prixHT"
+                  type="number"
+                  value={formData.prixUnitaire}
+                  onChange={(e) => setFormData({...formData, prixUnitaire: parseInt(e.target.value) || 0})}
+                  placeholder="0"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tva">Taux TVA</Label>
+                <Select 
+                  value={String(formData.tva)} 
+                  onValueChange={(value) => setFormData({...formData, tva: parseFloat(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tvaRates.map(t => (
+                      <SelectItem key={t.value} value={String(t.value)}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="unite">Unité</Label>
+                <Select 
+                  value={formData.unite} 
+                  onValueChange={(value) => setFormData({...formData, unite: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unites.map(u => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Aperçu du prix TTC */}
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Prix TTC calculé:</span>
+                <span className="text-lg font-bold text-emerald-600">
+                  {formatGNF(getPrixTTC(formData.prixUnitaire, formData.tva))} / {formData.unite}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                HT: {formatGNF(formData.prixUnitaire)} + TVA ({(formData.tva * 100).toFixed(0)}%): {formatGNF(Math.round(formData.prixUnitaire * formData.tva))}
+              </p>
+            </div>
+
+            {/* Stock */}
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Gestion du stock</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="stockActuel">Stock actuel</Label>
+                  <Input
+                    id="stockActuel"
+                    type="number"
+                    value={formData.stockActuel}
+                    onChange={(e) => setFormData({...formData, stockActuel: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="stockMin">Stock minimum (alerte)</Label>
+                  <Input
+                    id="stockMin"
+                    type="number"
+                    value={formData.stockMin}
+                    onChange={(e) => setFormData({...formData, stockMin: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+              Annuler
+            </Button>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700" 
+              onClick={handleSubmit}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {editingProduit ? 'Modifier' : 'Créer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

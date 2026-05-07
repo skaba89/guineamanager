@@ -1,997 +1,671 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-GuinéaManager ERP - Audit Technique Complet
-Généré automatiquement par Z.ai
+Rapport d'Audit End-to-End - GuinéaManager ERP
+Généré automatiquement le 7 mai 2026
 """
 
-import sys
-import os
-
-# Add skills path
-sys.path.insert(0, '/home/z/my-project/skills/pdf/scripts')
-
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+from reportlab.lib.units import cm, mm
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    PageBreak, Image, ListFlowable, ListItem
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
+    PageBreak, ListFlowable, ListItem, Image
 )
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase.pdfmetrics import registerFontFamily
-
-# ============================================================================
-# COLOR PALETTE (from pdf.py palette.generate)
-# ============================================================================
-ACCENT       = colors.HexColor('#af293f')
-TEXT_PRIMARY = colors.HexColor('#18191a')
-TEXT_MUTED   = colors.HexColor('#80888c')
-BG_SURFACE   = colors.HexColor('#e1e6e9')
-BG_PAGE      = colors.HexColor('#eceff1')
-
-TABLE_HEADER_COLOR = ACCENT
-TABLE_HEADER_TEXT  = colors.white
-TABLE_ROW_EVEN     = colors.white
-TABLE_ROW_ODD      = BG_SURFACE
-
-# ============================================================================
-# FONT REGISTRATION
-# ============================================================================
-pdfmetrics.registerFont(TTFont('NotoSerifSC', '/usr/share/fonts/truetype/noto-serif-sc/NotoSerifSC-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('NotoSerifSC-Bold', '/usr/share/fonts/truetype/noto-serif-sc/NotoSerifSC-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('SarasaMonoSC', '/usr/share/fonts/truetype/chinese/SarasaMonoSC-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'))
-
-registerFontFamily('NotoSerifSC', normal='NotoSerifSC', bold='NotoSerifSC-Bold')
-
-# ============================================================================
-# STYLES
-# ============================================================================
-styles = getSampleStyleSheet()
-
-# Title styles
-styles.add(ParagraphStyle(
-    name='MainTitle',
-    fontName='NotoSerifSC',
-    fontSize=28,
-    leading=36,
-    textColor=ACCENT,
-    alignment=TA_CENTER,
-    spaceAfter=20,
-))
-
-styles.add(ParagraphStyle(
-    name='Subtitle',
-    fontName='NotoSerifSC',
-    fontSize=14,
-    leading=20,
-    textColor=TEXT_MUTED,
-    alignment=TA_CENTER,
-    spaceAfter=30,
-))
-
-styles.add(ParagraphStyle(
-    name='H1',
-    fontName='NotoSerifSC',
-    fontSize=18,
-    leading=26,
-    textColor=ACCENT,
-    spaceBefore=24,
-    spaceAfter=12,
-))
-
-styles.add(ParagraphStyle(
-    name='H2',
-    fontName='NotoSerifSC',
-    fontSize=14,
-    leading=20,
-    textColor=TEXT_PRIMARY,
-    spaceBefore=18,
-    spaceAfter=8,
-))
-
-styles.add(ParagraphStyle(
-    name='H3',
-    fontName='NotoSerifSC',
-    fontSize=12,
-    leading=18,
-    textColor=TEXT_PRIMARY,
-    spaceBefore=12,
-    spaceAfter=6,
-))
-
-styles.add(ParagraphStyle(
-    name='Body',
-    fontName='NotoSerifSC',
-    fontSize=10.5,
-    leading=18,
-    textColor=TEXT_PRIMARY,
-    alignment=TA_LEFT,
-    wordWrap='CJK',
-    spaceBefore=0,
-    spaceAfter=8,
-))
-
-styles.add(ParagraphStyle(
-    name='BodyJustify',
-    fontName='NotoSerifSC',
-    fontSize=10.5,
-    leading=18,
-    textColor=TEXT_PRIMARY,
-    alignment=TA_JUSTIFY,
-    wordWrap='CJK',
-    spaceBefore=0,
-    spaceAfter=8,
-))
-
-styles.add(ParagraphStyle(
-    name='TableCell',
-    fontName='NotoSerifSC',
-    fontSize=9,
-    leading=14,
-    textColor=TEXT_PRIMARY,
-    alignment=TA_CENTER,
-    wordWrap='CJK',
-))
-
-styles.add(ParagraphStyle(
-    name='TableHeader',
-    fontName='NotoSerifSC',
-    fontSize=9,
-    leading=14,
-    textColor=colors.white,
-    alignment=TA_CENTER,
-))
-
-styles.add(ParagraphStyle(
-    name='Caption',
-    fontName='NotoSerifSC',
-    fontSize=9,
-    leading=14,
-    textColor=TEXT_MUTED,
-    alignment=TA_CENTER,
-    spaceBefore=4,
-    spaceAfter=12,
-))
-
-styles.add(ParagraphStyle(
-    name='StatusOK',
-    fontName='NotoSerifSC',
-    fontSize=10,
-    leading=16,
-    textColor=colors.HexColor('#16a34a'),
-))
-
-styles.add(ParagraphStyle(
-    name='StatusWarning',
-    fontName='NotoSerifSC',
-    fontSize=10,
-    leading=16,
-    textColor=colors.HexColor('#d97706'),
-))
-
-styles.add(ParagraphStyle(
-    name='StatusError',
-    fontName='NotoSerifSC',
-    fontSize=10,
-    leading=16,
-    textColor=colors.HexColor('#dc2626'),
-))
-
-# ============================================================================
-# DOCUMENT SETUP
-# ============================================================================
-output_path = '/home/z/my-project/download/Guineamanager_ERP_Audit_Technique.pdf'
-doc = SimpleDocTemplate(
-    output_path,
-    pagesize=A4,
-    leftMargin=2*cm,
-    rightMargin=2*cm,
-    topMargin=2*cm,
-    bottomMargin=2*cm,
-)
-
-story = []
-
-# ============================================================================
-# COVER PAGE
-# ============================================================================
-story.append(Spacer(1, 80))
-story.append(Paragraph('GUINÉAMANAGER ERP', styles['MainTitle']))
-story.append(Paragraph('Audit Technique Complet', styles['Subtitle']))
-story.append(Spacer(1, 30))
-story.append(Paragraph('Rapport d\'analyse, points forts, points faibles', styles['Subtitle']))
-story.append(Paragraph('et plan d\'évolution avec roadmap', styles['Subtitle']))
-story.append(Spacer(1, 60))
-
-# Metadata table
-meta_data = [
-    [Paragraph('<b>Version</b>', styles['TableCell']), Paragraph('1.0', styles['TableCell'])],
-    [Paragraph('<b>Date</b>', styles['TableCell']), Paragraph('01 Mai 2026', styles['TableCell'])],
-    [Paragraph('<b>Technologies</b>', styles['TableCell']), Paragraph('Next.js 16, React 19, Express.js, Prisma, SQLite', styles['TableCell'])],
-    [Paragraph('<b>Repository</b>', styles['TableCell']), Paragraph('github.com/skaba89/guineamanager', styles['TableCell'])],
-]
-meta_table = Table(meta_data, colWidths=[120, 300])
-meta_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, -1), BG_PAGE),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 12),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-    ('TOPPADDING', (0, 0), (-1, -1), 8),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-]))
-story.append(meta_table)
-
-story.append(PageBreak())
-
-# ============================================================================
-# TABLE OF CONTENTS
-# ============================================================================
-story.append(Paragraph('TABLE DES MATIÈRES', styles['H1']))
-story.append(Spacer(1, 12))
-
-toc_items = [
-    ('1. Résumé Exécutif', 'Vue d\'ensemble de l\'état du projet'),
-    ('2. Architecture Technique', 'Stack technologique et structure'),
-    ('3. Audit Frontend', 'Pages, composants, API calls'),
-    ('4. Audit Backend', 'Endpoints, authentification, validation'),
-    ('5. Audit Base de Données', 'Modèles Prisma, relations, index'),
-    ('6. Points Forts', 'Ce qui fonctionne bien'),
-    ('7. Points Faibles', 'Ce qui nécessite attention'),
-    ('8. Fonctionnalités Manquantes', 'Pages et actions non implémentées'),
-    ('9. Plan de Correction', 'Actions prioritaires'),
-    ('10. Roadmap d\'Évolution', 'Phases de développement'),
-]
-
-for title, desc in toc_items:
-    story.append(Paragraph(f'<b>{title}</b>', styles['Body']))
-    story.append(Paragraph(f'    {desc}', styles['Body']))
-    story.append(Spacer(1, 4))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 1. RÉSUMÉ EXÉCUTIF
-# ============================================================================
-story.append(Paragraph('1. RÉSUMÉ EXÉCUTIF', styles['H1']))
-
-story.append(Paragraph(
-    'GuinéaManager ERP est un système de gestion d\'entreprise multi-pays conçu pour le marché ouest-africain, '
-    'avec une attention particulière pour la Guinée. L\'application adopte une architecture moderne avec Next.js 16 '
-    'pour le frontend et Express.js pour le backend, utilisant Prisma comme ORM et SQLite comme base de données. '
-    'Ce rapport d\'audit identifie les forces et faiblesses du système actuel, les fonctionnalités manquantes, '
-    'et propose un plan d\'évolution structuré avec une roadmap détaillée.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('1.1 Statistiques Clés', styles['H2']))
-
-stats_data = [
-    [Paragraph('<b>Catégorie</b>', styles['TableHeader']),
-     Paragraph('<b>Quantité</b>', styles['TableHeader']),
-     Paragraph('<b>État</b>', styles['TableHeader'])],
-    [Paragraph('Pages Frontend', styles['TableCell']),
-     Paragraph('29 pages', styles['TableCell']),
-     Paragraph('23 routes actives', styles['TableCell'])],
-    [Paragraph('Composants UI', styles['TableCell']),
-     Paragraph('53 composants', styles['TableCell']),
-     Paragraph('shadcn/ui', styles['TableCell'])],
-    [Paragraph('Endpoints Backend', styles['TableCell']),
-     Paragraph('~170 endpoints', styles['TableCell']),
-     Paragraph('95% implémentés', styles['TableCell'])],
-    [Paragraph('Modèles Prisma', styles['TableCell']),
-     Paragraph('59 modèles', styles['TableCell']),
-     Paragraph('Migration en attente', styles['TableCell'])],
-    [Paragraph('Console.log', styles['TableCell']),
-     Paragraph('~75 statements', styles['TableCell']),
-     Paragraph('À nettoyer', styles['TableCell'])],
-    [Paragraph('Mock Data', styles['TableCell']),
-     Paragraph('8+ générateurs', styles['TableCell']),
-     Paragraph('À remplacer', styles['TableCell'])],
-]
-
-stats_table = Table(stats_data, colWidths=[180, 120, 140])
-stats_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 6), (-1, 6), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(stats_table)
-story.append(Paragraph('Tableau 1 : Statistiques clés du projet', styles['Caption']))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 2. ARCHITECTURE TECHNIQUE
-# ============================================================================
-story.append(Paragraph('2. ARCHITECTURE TECHNIQUE', styles['H1']))
-
-story.append(Paragraph('2.1 Stack Technologique', styles['H2']))
-
-story.append(Paragraph(
-    'L\'application utilise une architecture moderne séparant clairement le frontend du backend. '
-    'Le frontend est construit avec Next.js 16 utilisant Turbopack, React 19, Tailwind CSS 4, et shadcn/ui '
-    'pour les composants d\'interface. Le backend utilise Express.js avec TypeScript, Prisma ORM, et SQLite '
-    'pour la persistance des données. Cette séparation permet une maintenance indépendante des deux couches '
-    'et facilite les déploiements scalables. L\'authentification est gérée via JWT avec support du 2FA (TOTP et SMS), '
-    'et le caching utilise Redis pour optimiser les performances des requêtes fréquentes.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('2.2 Structure du Projet', styles['H2']))
-
-structure_data = [
-    [Paragraph('<b>Répertoire</b>', styles['TableHeader']),
-     Paragraph('<b>Contenu</b>', styles['TableHeader'])],
-    [Paragraph('src/components/pages/', styles['TableCell']),
-     Paragraph('29 composants de page (dashboard, clients, factures, etc.)', styles['TableCell'])],
-    [Paragraph('src/components/ui/', styles['TableCell']),
-     Paragraph('53 composants UI réutilisables (shadcn/ui)', styles['TableCell'])],
-    [Paragraph('src/lib/', styles['TableCell']),
-     Paragraph('API client, stores Zustand, utilitaires', styles['TableCell'])],
-    [Paragraph('backend/src/routes/', styles['TableCell']),
-     Paragraph('28 fichiers de routes API', styles['TableCell'])],
-    [Paragraph('backend/prisma/', styles['TableCell']),
-     Paragraph('Schéma Prisma, migrations, seed', styles['TableCell'])],
-]
-
-structure_table = Table(structure_data, colWidths=[160, 280])
-structure_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(structure_table)
-story.append(Paragraph('Tableau 2 : Structure des répertoires principaux', styles['Caption']))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 3. AUDIT FRONTEND
-# ============================================================================
-story.append(Paragraph('3. AUDIT FRONTEND', styles['H1']))
-
-story.append(Paragraph('3.1 Pages Implémentées', styles['H2']))
-
-story.append(Paragraph(
-    'Le frontend compte 29 composants de page couvrant les fonctionnalités essentielles d\'un ERP moderne. '
-    'La navigation est gérée via une sidebar avec 23 routes actives. Chaque page implémente des fonctionnalités '
-    'spécifiques avec des formulaires, des tableaux de données, et des actions CRUD. Les pages principales '
-    'incluent le tableau de bord avec KPIs et graphiques, la gestion des clients avec filtres et recherche, '
-    'la facturation avec calcul TVA et export PDF, et les modules RH avec gestion des congés et de la paie.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('3.2 Inventaire des Pages', styles['H2']))
-
-pages_data = [
-    [Paragraph('<b>Module</b>', styles['TableHeader']),
-     Paragraph('<b>Pages</b>', styles['TableHeader']),
-     Paragraph('<b>Fonctionnalités</b>', styles['TableHeader'])],
-    [Paragraph('Core', styles['TableCell']),
-     Paragraph('Dashboard, Settings', styles['TableCell']),
-     Paragraph('KPIs, configuration, profil', styles['TableCell'])],
-    [Paragraph('Ventes', styles['TableCell']),
-     Paragraph('Clients, Factures, Devis, Commandes', styles['TableCell']),
-     Paragraph('CRUD, TVA, PDF, workflow', styles['TableCell'])],
-    [Paragraph('Achats', styles['TableCell']),
-     Paragraph('Fournisseurs, Commandes Fournisseur', styles['TableCell']),
-     Paragraph('Gestion fournisseurs, réception', styles['TableCell'])],
-    [Paragraph('Stock', styles['TableCell']),
-     Paragraph('Produits, Stock, Entrepôts, Inventaires', styles['TableCell']),
-     Paragraph('Alertes, transferts, valorisation', styles['TableCell'])],
-    [Paragraph('RH', styles['TableCell']),
-     Paragraph('Employés, Paie, Dépenses', styles['TableCell']),
-     Paragraph('Congés, bulletins, cotisations', styles['TableCell'])],
-    [Paragraph('Finance', styles['TableCell']),
-     Paragraph('Comptabilité, Devises, Rapports', styles['TableCell']),
-     Paragraph('OHADA, multi-devises, exports', styles['TableCell'])],
-    [Paragraph('CRM', styles['TableCell']),
-     Paragraph('CRM, Logistique', styles['TableCell']),
-     Paragraph('Prospects, opportunités, livraisons', styles['TableCell'])],
-    [Paragraph('IA', styles['TableCell']),
-     Paragraph('AI Predictive, AI Assistant', styles['TableCell']),
-     Paragraph('Prédictions, classification OHADA', styles['TableCell'])],
-    [Paragraph('Mobile', styles['TableCell']),
-     Paragraph('POS, Mobile App, Mobile Money', styles['TableCell']),
-     Paragraph('Vente, PWA, Orange/MTN/Wave', styles['TableCell'])],
-]
-
-pages_table = Table(pages_data, colWidths=[80, 150, 210])
-pages_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 6), (-1, 6), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 8), (-1, 8), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-    ('TOPPADDING', (0, 0), (-1, -1), 5),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-]))
-story.append(pages_table)
-story.append(Paragraph('Tableau 3 : Inventaire des pages par module', styles['Caption']))
-
-story.append(Paragraph('3.3 Problèmes Identifiés dans le Frontend', styles['H2']))
-
-story.append(Paragraph(
-    'L\'audit a révélé plusieurs problèmes nécessitant attention. Premièrement, environ 75 statements console.log '
-    'sont présents dans le code de production, principalement dans les pages settings, commandes, et crm. '
-    'Ces statements doivent être remplacés par un service de logging approprié. Deuxièmement, plusieurs générateurs '
-    'de données mock sont utilisés dans les modules IA et RH, simulant des réponses au lieu d\'appeler de vraies APIs. '
-    'Troisièmement, des pages dupliquées existent : login-page.tsx vs simple-login-page.tsx, factures-page.tsx vs '
-    'factures-enhanced-page.tsx, suggérant une refactorisation incomplète.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 4. AUDIT BACKEND
-# ============================================================================
-story.append(Paragraph('4. AUDIT BACKEND', styles['H1']))
-
-story.append(Paragraph('4.1 Endpoints API', styles['H2']))
-
-story.append(Paragraph(
-    'Le backend expose environ 170 endpoints répartis en 28 fichiers de routes. L\'authentification couvre '
-    '14 endpoints incluant login, register, 2FA (setup, verify, disable), et récupération de mot de passe. '
-    'Les routes métier incluent la gestion des clients (7 endpoints), des produits (9 endpoints), des factures '
-    '(9 endpoints), des employés (7 endpoints), et de la paie (9 endpoints). Le module de comptabilité OHADA '
-    'implémente 13 endpoints pour la tenue des livres comptables. L\'API REST est bien structurée avec une '
-    'séparation claire des responsabilités par domaine fonctionnel.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('4.2 Authentification et Autorisation', styles['H2']))
-
-story.append(Paragraph(
-    'Le système d\'authentification utilise JWT avec bcrypt pour le hachage des mots de passe. Le 2FA est '
-    'implémenté via TOTP (compatible Google Authenticator) et SMS OTP. Cependant, l\'intégration du SMS gateway '
-    'n\'est pas complétée (3 commentaires TODO identifiés). Le contrôle d\'accès basé sur les rôles (RBAC) '
-    'définit 5 niveaux : OWNER (accès complet), ADMIN (configuration), COMPTABLE (paie, dépenses), MANAGER '
-    '(opérations), et EMPLOYE (lecture limitée). Le middleware d\'authentification valide systématiquement '
-    'le token et vérifie le statut actif de l\'utilisateur avant d\'autoriser l\'accès.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('4.3 Endpoints Partiellement Implémentés', styles['H2']))
-
-endpoints_issues = [
-    [Paragraph('<b>Fichier</b>', styles['TableHeader']),
-     Paragraph('<b>Ligne</b>', styles['TableHeader']),
-     Paragraph('<b>Problème</b>', styles['TableHeader'])],
-    [Paragraph('devis.routes.ts', styles['TableCell']),
-     Paragraph('229', styles['TableCell']),
-     Paragraph('Génération PDF non implémentée', styles['TableCell'])],
-    [Paragraph('devis.routes.ts', styles['TableCell']),
-     Paragraph('262', styles['TableCell']),
-     Paragraph('Envoi email avec PDF non implémenté', styles['TableCell'])],
-    [Paragraph('auth-2fa.routes.ts', styles['TableCell']),
-     Paragraph('170, 406', styles['TableCell']),
-     Paragraph('Intégration SMS gateway manquante', styles['TableCell'])],
-    [Paragraph('auth-2fa.routes.ts', styles['TableCell']),
-     Paragraph('658', styles['TableCell']),
-     Paragraph('Envoi email de vérification manquant', styles['TableCell'])],
-]
-
-endpoints_table = Table(endpoints_issues, colWidths=[140, 60, 250])
-endpoints_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(endpoints_table)
-story.append(Paragraph('Tableau 4 : Endpoints partiellement implémentés', styles['Caption']))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 5. AUDIT BASE DE DONNÉES
-# ============================================================================
-story.append(Paragraph('5. AUDIT BASE DE DONNÉES', styles['H1']))
-
-story.append(Paragraph('5.1 Modèles Prisma', styles['H2']))
-
-story.append(Paragraph(
-    'Le schéma Prisma définit 59 modèles couvrant tous les domaines fonctionnels de l\'ERP. Les modèles core '
-    'incluent Company (tenant), User, Client, et Produit. Les modèles de facturation couvrent Facture, LigneFacture, '
-    'Devis, LigneDevis, et Paiement. Le module RH inclut Employe, Conge, et BulletinPaie. La comptabilité OHADA '
-    'est bien représentée avec PlanComptableOHADA, ExerciceComptable, JournalComptable, EcritureComptable, '
-    'et les modèles de bilan. Cette modélisation complète permet une gestion intégrée de tous les processus métier.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('5.2 Problèmes Critiques Identifiés', styles['H2']))
-
-story.append(Paragraph(
-    'Un problème critique a été identifié dans le schéma Prisma : une erreur de syntaxe à la ligne 316 dans '
-    'la définition du modèle Employe. L\'expression @@unique(atricule, companyId]) contient deux erreurs : '
-    'le nom de champ devrait être "matricule" et le crochet fermant est mal positionné. Cette erreur peut '
-    'empêcher la migration de s\'appliquer correctement. De plus, la migration initiale existe mais n\'a pas '
-    'été appliquée à la base de données, ce qui signifie que le schéma réel peut différer du schéma Prisma.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('5.3 Index Manquants', styles['H2']))
-
-story.append(Paragraph(
-    'Plusieurs champs fréquemment utilisés dans les requêtes ne disposent pas d\'index, ce qui peut impacter '
-    'les performances sur de grands volumes de données. Les champs suivants bénéficieraient d\'un index : '
-    'clientId sur Facture (filtrage par client), dateEcheance sur Facture (factures en retard), date sur Paiement, '
-    'valide sur Depense (workflow d\'approbation), actif sur Employe et Produit (filtrage des actifs), et '
-    'createdAt sur SupportTicket (ordre chronologique). L\'ajout de ces index améliorerait significativement '
-    'les temps de réponse des pages listes.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 6. POINTS FORTS
-# ============================================================================
-story.append(Paragraph('6. POINTS FORTS', styles['H1']))
-
-story.append(Paragraph(
-    'L\'audit a mis en évidence plusieurs points forts significatifs qui constituent une base solide pour '
-    'le développement futur de l\'application. Ces éléments témoignent d\'une architecture bien pensée et '
-    'd\'une implémentation de qualité sur de nombreux aspects.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('6.1 Architecture Moderne et Scalable', styles['H2']))
-
-story.append(Paragraph(
-    'L\'application adopte une architecture moderne avec une séparation claire entre frontend et backend. '
-    'L\'utilisation de Next.js 16 avec Turbopack pour le frontend et Express.js avec TypeScript pour le backend '
-    'permet une évolution indépendante des deux couches. Le choix de Prisma comme ORM facilite les opérations '
-    'de base de données et garantit la cohérence du typage. Cette architecture permet une mise à l\'échelle '
-    'horizontale et facilite les déploiements dans des environnements cloud.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('6.2 Couverture Fonctionnelle Complète', styles['H2']))
-
-story.append(Paragraph(
-    'L\'ERP couvre l\'ensemble des fonctionnalités attendues pour la gestion d\'une entreprise : '
-    'facturation avec calcul TVA et workflow de validation, gestion des stocks avec alertes et transferts '
-    'inter-entrepôts, ressources humaines avec congés et paie, comptabilité conforme au plan OHADA, et '
-    'CRM avec pipeline de vente. Cette couverture fonctionnelle complète permet à l\'application de répondre '
-    'aux besoins des PME ouest-africaines sans nécessiter de solutions complémentaires.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('6.3 Focus Marché Local', styles['H2']))
-
-story.append(Paragraph(
-    'L\'application démontre une attention particulière au marché ouest-africain avec l\'intégration des '
-    'paiements Mobile Money (Orange Money, MTN Money, Wave), le support multi-devises avec taux de change, '
-    'et la conformité comptable OHADA. L\'adaptation aux spécificités locales (congés, cotisations sociales, '
-    'jours fériés) par pays renforce la pertinence de la solution pour le marché cible. Cette localisation '
-    'constitue un avantage compétitif significatif face aux solutions internationales génériques.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('6.4 Expérience Utilisateur Professionnelle', styles['H2']))
-
-story.append(Paragraph(
-    'L\'interface utilisateur utilise shadcn/ui pour des composants modernes et accessibles. Le design '
-    'a été récemment amélioré avec le remplacement des emojis par des icônes SVG (lucide-react) pour '
-    'un rendu plus professionnel. Les formulaires disposent de validations côté client et les actions '
-    'sont accompagnées de feedback visuel (toasts, états de chargement). L\'application est responsive '
-    'et adaptée à différents formats d\'écran.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 7. POINTS FAIBLES
-# ============================================================================
-story.append(Paragraph('7. POINTS FAIBLES', styles['H1']))
-
-story.append(Paragraph(
-    'L\'audit a également identifié des points faibles nécessitant correction pour garantir la stabilité '
-    'et la maintenabilité de l\'application. Ces éléments sont classés par niveau de priorité pour faciliter '
-    'la planification des corrections.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('7.1 Problèmes Critiques', styles['H2']))
-
-critical_data = [
-    [Paragraph('<b>Problème</b>', styles['TableHeader']),
-     Paragraph('<b>Impact</b>', styles['TableHeader']),
-     Paragraph('<b>Fichiers</b>', styles['TableHeader'])],
-    [Paragraph('Méthodes API manquantes', styles['TableCell']),
-     Paragraph('Erreurs runtime sur settings', styles['TableCell']),
-     Paragraph('src/lib/api.ts', styles['TableCell'])],
-    [Paragraph('Erreur syntaxe Prisma', styles['TableCell']),
-     Paragraph('Migration impossible', styles['TableCell']),
-     Paragraph('prisma/schema.prisma:316', styles['TableCell'])],
-    [Paragraph('SMS gateway non intégré', styles['TableCell']),
-     Paragraph('2FA SMS non fonctionnel', styles['TableCell']),
-     Paragraph('auth-2fa.routes.ts', styles['TableCell'])],
-    [Paragraph('Migration non appliquée', styles['TableCell']),
-     Paragraph('Schéma DB désynchronisé', styles['TableCell']),
-     Paragraph('prisma/migrations/', styles['TableCell'])],
-]
-
-critical_table = Table(critical_data, colWidths=[170, 140, 150])
-critical_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(critical_table)
-story.append(Paragraph('Tableau 5 : Problèmes critiques identifiés', styles['Caption']))
-
-story.append(Paragraph('7.2 Problèmes Moyens', styles['H2']))
-
-story.append(Paragraph(
-    'Plusieurs problèmes de priorité moyenne ont été identifiés. Le code de production contient environ '
-    '75 statements console.log qui doivent être remplacés par un service de logging structuré. Les modules '
-    'IA (ai-assistant-page.tsx et ai-predictive-page.tsx) utilisent des données mock au lieu d\'appeler '
-    'de vraies APIs d\'intelligence artificielle. Les méthodes API client utilisent le type "any" à de '
-    'nombreux endroits, réduisant les bénéfices du typage TypeScript. Enfin, les réponses d\'erreur API '
-    'ne sont pas standardisées, mélangeant les formats {success, message} et {error}.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('7.3 Problèmes Mineurs', styles['H2']))
-
-story.append(Paragraph(
-    'Des pages dupliquées suggèrent une refactorisation incomplète : login-page.tsx vs simple-login-page.tsx, '
-    'factures-page.tsx vs factures-enhanced-page.tsx, employes-page.tsx vs employes-enhanced-page.tsx. '
-    'La génération de QR codes dans mobile-money-page.tsx utilise un canvas aléatoire au lieu d\'une vraie '
-    'bibliothèque QR. Le placeholder de carte dans logistique-page.tsx (ligne 421) n\'est pas implémenté. '
-    'Ces éléments mineurs n\'empêchent pas le fonctionnement mais dégradent la qualité perçue.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 8. FONCTIONNALITÉS MANQUANTES
-# ============================================================================
-story.append(Paragraph('8. FONCTIONNALITÉS MANQUANTES', styles['H1']))
-
-story.append(Paragraph('8.1 Méthodes API Client Manquantes', styles['H2']))
-
-story.append(Paragraph(
-    'L\'audit de l\'API client a révélé que plusieurs méthodes appelées par le frontend n\'existent pas '
-    'dans la classe ApiClient. Ces méthodes manquantes causent des erreurs TypeError à l\'exécution lorsque '
-    'les pages correspondantes sont chargées. Les méthodes génériques get(), post(), put(), delete() sont '
-    'appelées par de nombreuses pages mais ne sont pas définies, ce qui oblige à utiliser request() avec '
-    'des paramètres verbeux.',
-    styles['BodyJustify']
-))
-
-missing_api = [
-    [Paragraph('<b>Méthode</b>', styles['TableHeader']),
-     Paragraph('<b>Page appelante</b>', styles['TableHeader']),
-     Paragraph('<b>Route backend</b>', styles['TableHeader'])],
-    [Paragraph('api.get()', styles['TableCell']),
-     Paragraph('devises, crm, comptabilite', styles['TableCell']),
-     Paragraph('Générique GET', styles['TableCell'])],
-    [Paragraph('api.post()', styles['TableCell']),
-     Paragraph('devises, crm, comptabilite', styles['TableCell']),
-     Paragraph('Générique POST', styles['TableCell'])],
-    [Paragraph('getCommandesFournisseur()', styles['TableCell']),
-     Paragraph('fournisseurs-page.tsx:185', styles['TableCell']),
-     Paragraph('/fournisseurs/commandes/all', styles['TableCell'])],
-    [Paragraph('createCommandeFournisseur()', styles['TableCell']),
-     Paragraph('fournisseurs-page.tsx:235', styles['TableCell']),
-     Paragraph('/fournisseurs/commandes', styles['TableCell'])],
-    [Paragraph('createTransfert()', styles['TableCell']),
-     Paragraph('stock-page.tsx:245', styles['TableCell']),
-     Paragraph('/entrepots/transferts', styles['TableCell'])],
-]
-
-missing_table = Table(missing_api, colWidths=[150, 150, 160])
-missing_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-    ('TOPPADDING', (0, 0), (-1, -1), 5),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-]))
-story.append(missing_table)
-story.append(Paragraph('Tableau 6 : Méthodes API client manquantes', styles['Caption']))
-
-story.append(Paragraph('8.2 Pages et Actions Non Fonctionnelles', styles['H2']))
-
-story.append(Paragraph(
-    'Plusieurs pages présentent des fonctionnalités partiellement implémentées. La page de paramètres '
-    '(settings-page.tsx) appelle des méthodes API inexistantes (getPlans, getAbonnementActuel, get2FAStatus, '
-    'getMobileMoneyConfig, initiate2FASetup) causant des erreurs console. La page CRM (crm-page.tsx) utilise '
-    'api.get() et api.post() non définis pour les prospects, opportunités et activités. La page de devises '
-    '(devises-page.tsx) ne peut pas charger les taux de change ni effectuer de conversions. La page de '
-    'comptabilité (comptabilite-page.tsx) a des appels API similaires non fonctionnels.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('8.3 Backend Routes Sans Frontend', styles['H2']))
-
-story.append(Paragraph(
-    'Inversement, plusieurs routes backend bien implémentées n\'ont pas de méthodes correspondantes dans '
-    'l\'API client frontend. Les routes /devis/* (stats, convert, send) sont implémentées côté serveur '
-    'mais non exposées au frontend. Les routes /commandes/* (cancel, facture, livraison) nécessitent des '
-    'méthodes dédiées. Les routes /support/* (tickets, faq, stats) sont complètement implémentées mais '
-    'inaccessibles depuis l\'interface. Cette lacune prive les utilisateurs de fonctionnalités pourtant '
-    'développées.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 9. PLAN DE CORRECTION
-# ============================================================================
-story.append(Paragraph('9. PLAN DE CORRECTION', styles['H1']))
-
-story.append(Paragraph(
-    'Le plan de correction est organisé en trois phases selon la priorité des corrections. Les actions '
-    'de priorité haute doivent être réalisées immédiatement car elles bloquent des fonctionnalités critiques. '
-    'Les actions de priorité moyenne améliorent la qualité et la maintenabilité. Les actions de priorité '
-    'basse concernent les optimisations et améliorations cosmétiques.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('9.1 Priorité Haute (Immédiat)', styles['H2']))
-
-high_priority = [
-    [Paragraph('<b>#</b>', styles['TableHeader']),
-     Paragraph('<b>Action</b>', styles['TableHeader']),
-     Paragraph('<b>Effort</b>', styles['TableHeader']),
-     Paragraph('<b>Impact</b>', styles['TableHeader'])],
-    [Paragraph('1', styles['TableCell']),
-     Paragraph('Ajouter méthodes get/post/put/delete génériques à ApiClient', styles['TableCell']),
-     Paragraph('1h', styles['TableCell']),
-     Paragraph('Critique', styles['TableCell'])],
-    [Paragraph('2', styles['TableCell']),
-     Paragraph('Corriger erreur syntaxe Prisma (schema.prisma:316)', styles['TableCell']),
-     Paragraph('15min', styles['TableCell']),
-     Paragraph('Critique', styles['TableCell'])],
-    [Paragraph('3', styles['TableCell']),
-     Paragraph('Appliquer migration Prisma en attente', styles['TableCell']),
-     Paragraph('15min', styles['TableCell']),
-     Paragraph('Critique', styles['TableCell'])],
-    [Paragraph('4', styles['TableCell']),
-     Paragraph('Ajouter méthodes API manquantes (fournisseurs, stock)', styles['TableCell']),
-     Paragraph('2h', styles['TableCell']),
-     Paragraph('Élevé', styles['TableCell'])],
-    [Paragraph('5', styles['TableCell']),
-     Paragraph('Intégrer SMS gateway pour 2FA (Twilio ou équivalent local)', styles['TableCell']),
-     Paragraph('4h', styles['TableCell']),
-     Paragraph('Élevé', styles['TableCell'])],
-]
-
-high_table = Table(high_priority, colWidths=[30, 250, 60, 80])
-high_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-    ('TOPPADDING', (0, 0), (-1, -1), 5),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-]))
-story.append(high_table)
-story.append(Paragraph('Tableau 7 : Actions de priorité haute', styles['Caption']))
-
-story.append(Paragraph('9.2 Priorité Moyenne (Court terme)', styles['H2']))
-
-story.append(Paragraph(
-    'Les actions de priorité moyenne incluent : le nettoyage des 75 statements console.log et leur '
-    'remplacement par un service de logging (pino ou winston), le remplacement des générateurs de données '
-    'mock par de vraies intégrations API dans les modules IA, l\'ajout d\'interfaces TypeScript pour '
-    'remplacer les types "any" dans l\'API client, la standardisation du format des réponses d\'erreur API, '
-    'et la suppression des pages dupliquées en conservant les versions "enhanced". L\'effort total estimé '
-    'pour ces corrections est de 2-3 jours de développement.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('9.3 Priorité Basse (Moyen terme)', styles['H2']))
-
-story.append(Paragraph(
-    'Les actions de priorité basse concernent l\'amélioration continue de la qualité. L\'ajout d\'index '
-    'sur les champs fréquemment requêtés améliorera les performances. L\'intégration d\'une vraie bibliothèque '
-    'QR code remplacera le générateur aléatoire. L\'implémentation de la carte dans le module logistique '
-    'nécessite une intégration avec un service de cartographie (Mapbox, OpenStreetMap). L\'ajout d\'audit '
-    'logging sur les opérations sensibles renforcera la traçabilité. Ces améliorations peuvent être planifiées '
-    'sur plusieurs sprints.',
-    styles['BodyJustify']
-))
-
-story.append(PageBreak())
-
-# ============================================================================
-# 10. ROADMAP D'ÉVOLUTION
-# ============================================================================
-story.append(Paragraph('10. ROADMAP D\'ÉVOLUTION', styles['H1']))
-
-story.append(Paragraph(
-    'La roadmap d\'évolution propose un plan de développement structuré sur 6 mois, organisé en sprints '
-    'de 2 semaines. Chaque phase inclut des objectifs spécifiques, des livrables mesurables, et des '
-    'critères de validation. Cette approche permet une livraison incrémentale de valeur tout en maintenant '
-    'la qualité du code.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('10.1 Phase 1 : Stabilisation (S1-S2, 1 mois)', styles['H2']))
-
-story.append(Paragraph(
-    'La première phase se concentre sur la correction des problèmes critiques identifiés dans l\'audit. '
-    'Le sprint 1 est dédié à la correction de l\'API client (ajout des méthodes manquantes, typage TypeScript), '
-    'la correction du schéma Prisma et l\'application des migrations. Le sprint 2 couvre l\'intégration '
-    'du SMS gateway, le nettoyage du code (console.log), et la mise en place d\'un service de logging '
-    'structuré. À l\'issue de cette phase, toutes les pages doivent être fonctionnelles sans erreur console.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('10.2 Phase 2 : Qualité (S3-S4, 1 mois)', styles['H2']))
-
-story.append(Paragraph(
-    'La deuxième phase améliore la qualité globale du code. Le sprint 3 inclut l\'ajout de tests unitaires '
-    'pour les services critiques (auth, facturation, paie), l\'implémentation de tests d\'intégration pour '
-    'les API principales, et la documentation Swagger des endpoints. Le sprint 4 couvre le remplacement '
-    'des mocks par de vraies APIs (GLM-5 pour l\'assistant IA), l\'ajout d\'index base de données, et '
-    'l\'optimisation des requêtes N+1. Cette phase porte la couverture de tests à 60% minimum.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('10.3 Phase 3 : Fonctionnalités (S5-S8, 2 mois)', styles['H2']))
-
-story.append(Paragraph(
-    'La troisième phase enrichit les fonctionnalités existantes. Le sprint 5 implémente l\'intégration '
-    'complète Orange Money avec webhooks, et l\'intégration MTN Money. Le sprint 6 ajoute le module de '
-    'rapports avancés avec exports Excel/PDF personnalisables. Le sprint 7 développe le tableau de bord '
-    'analytique avec KPIs personnalisables. Le sprint 8 intègre un système de notifications temps réel '
-    'via WebSockets. Chaque sprint livre une fonctionnalité complète et testée.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph('10.4 Phase 4 : Mobile & Excellence (S9-S12, 2 mois)', styles['H2']))
-
-story.append(Paragraph(
-    'La quatrième phase finalise l\'application mobile PWA et optimise l\'expérience utilisateur. '
-    'Le sprint 9 améliore la PWA avec mode offline complet et synchronisation. Le sprint 10 intègre '
-    'la géolocalisation pour le module logistique. Le sprint 11 optimise les performances (lazy loading, '
-    'code splitting, caching avancé). Le sprint 12 finalise avec une passe UX/UI, l\'accessibilité (WCAG), '
-    'et la documentation utilisateur. Cette phase prépare le produit pour une commercialisation.',
-    styles['BodyJustify']
-))
-
-story.append(Spacer(1, 20))
-
-# Roadmap summary table
-roadmap_data = [
-    [Paragraph('<b>Phase</b>', styles['TableHeader']),
-     Paragraph('<b>Durée</b>', styles['TableHeader']),
-     Paragraph('<b>Objectifs</b>', styles['TableHeader']),
-     Paragraph('<b>Livrables</b>', styles['TableHeader'])],
-    [Paragraph('1. Stabilisation', styles['TableCell']),
-     Paragraph('1 mois', styles['TableCell']),
-     Paragraph('Corrections critiques', styles['TableCell']),
-     Paragraph('API complète, DB migrée', styles['TableCell'])],
-    [Paragraph('2. Qualité', styles['TableCell']),
-     Paragraph('1 mois', styles['TableCell']),
-     Paragraph('Tests, documentation', styles['TableCell']),
-     Paragraph('60% coverage, Swagger', styles['TableCell'])],
-    [Paragraph('3. Fonctionnalités', styles['TableCell']),
-     Paragraph('2 mois', styles['TableCell']),
-     Paragraph('Mobile Money, rapports', styles['TableCell']),
-     Paragraph('Intégrations, analytics', styles['TableCell'])],
-    [Paragraph('4. Excellence', styles['TableCell']),
-     Paragraph('2 mois', styles['TableCell']),
-     Paragraph('PWA, UX, perf', styles['TableCell']),
-     Paragraph('Produit commercialisable', styles['TableCell'])],
-]
-
-roadmap_table = Table(roadmap_data, colWidths=[100, 70, 130, 140])
-roadmap_table.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), TABLE_HEADER_COLOR),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-    ('BACKGROUND', (0, 2), (-1, 2), TABLE_ROW_ODD),
-    ('BACKGROUND', (0, 4), (-1, 4), TABLE_ROW_ODD),
-    ('GRID', (0, 0), (-1, -1), 0.5, TEXT_MUTED),
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-    ('TOPPADDING', (0, 0), (-1, -1), 6),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-]))
-story.append(roadmap_table)
-story.append(Paragraph('Tableau 8 : Résumé de la roadmap d\'évolution', styles['Caption']))
-
-story.append(PageBreak())
-
-# ============================================================================
-# CONCLUSION
-# ============================================================================
-story.append(Paragraph('CONCLUSION', styles['H1']))
-
-story.append(Paragraph(
-    'GuinéaManager ERP présente une architecture solide et une couverture fonctionnelle remarquable pour '
-    'un système de gestion d\'entreprise. Les points forts identifiés - architecture moderne, couverture '
-    'complète, focus marché local, et UX professionnelle - constituent des fondations solides pour le '
-    'développement futur. Cependant, l\'audit a révélé plusieurs problèmes critiques nécessitant une '
-    'attention immédiate : méthodes API manquantes, erreur de syntaxe Prisma, migration non appliquée, '
-    'et intégration SMS gateway incomplète.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph(
-    'Les recommandations prioritaires sont les suivantes : corriger immédiatement l\'API client pour '
-    'rétablir la fonctionnalité des pages settings, CRM, et devises ; appliquer la migration Prisma '
-    'après correction de l\'erreur de syntaxe ; intégrer un SMS gateway pour activer le 2FA par SMS ; '
-    'et nettoyer le code de production (console.log, mocks, types any). La roadmap proposée permet de '
-    'planifier ces corrections tout en continuant le développement de nouvelles fonctionnalités.',
-    styles['BodyJustify']
-))
-
-story.append(Paragraph(
-    'Avec un effort estimé de 6 mois suivant la roadmap proposée, GuinéaManager ERP peut atteindre un '
-    'niveau de qualité et de fonctionnalités adapté à une commercialisation sur le marché ouest-africain. '
-    'La priorisation des corrections et l\'approche incrémentale permettent de livrer de la valeur à '
-    'chaque phase tout en améliorant continuellement la qualité du produit.',
-    styles['BodyJustify']
-))
-
-# Build PDF
-doc.build(story)
-print(f"PDF généré: {output_path}")
+import os
+from datetime import datetime
+
+# Register Chinese fonts
+try:
+    pdfmetrics.registerFont(TTFont('NotoSansSC', '/usr/share/fonts/truetype/chinese/NotoSansSC[wght].ttf'))
+    pdfmetrics.registerFont(TTFont('NotoSerifSC', '/usr/share/fonts/truetype/noto-serif-sc/NotoSerifSC-Regular.ttf'))
+    CHINESE_FONT = 'NotoSansSC'
+except:
+    CHINESE_FONT = 'Helvetica'
+
+# Colors
+PRIMARY_COLOR = colors.HexColor('#059669')
+SECONDARY_COLOR = colors.HexColor('#0F172A')
+ACCENT_COLOR = colors.HexColor('#3B82F6')
+WARNING_COLOR = colors.HexColor('#F59E0B')
+ERROR_COLOR = colors.HexColor('#EF4444')
+SUCCESS_COLOR = colors.HexColor('#10B981')
+LIGHT_BG = colors.HexColor('#F8FAFC')
+
+# Output path
+OUTPUT_PATH = '/home/z/my-project/download/GuineaManager_Audit_EndToEnd.pdf'
+
+def create_styles():
+    styles = getSampleStyleSheet()
+    
+    # Title style
+    styles.add(ParagraphStyle(
+        name='CustomTitle',
+        fontName=CHINESE_FONT,
+        fontSize=24,
+        textColor=SECONDARY_COLOR,
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        spaceBefore=20,
+    ))
+    
+    # Heading 1
+    styles.add(ParagraphStyle(
+        name='Heading1Custom',
+        fontName=CHINESE_FONT,
+        fontSize=16,
+        textColor=PRIMARY_COLOR,
+        spaceBefore=20,
+        spaceAfter=10,
+        borderColor=PRIMARY_COLOR,
+        borderWidth=2,
+        borderPadding=5,
+        leftIndent=0,
+    ))
+    
+    # Heading 2
+    styles.add(ParagraphStyle(
+        name='Heading2Custom',
+        fontName=CHINESE_FONT,
+        fontSize=13,
+        textColor=SECONDARY_COLOR,
+        spaceBefore=15,
+        spaceAfter=8,
+    ))
+    
+    # Body text
+    styles.add(ParagraphStyle(
+        name='BodyCustom',
+        fontName=CHINESE_FONT,
+        fontSize=10,
+        textColor=SECONDARY_COLOR,
+        alignment=TA_JUSTIFY,
+        spaceBefore=5,
+        spaceAfter=5,
+        leading=14,
+    ))
+    
+    # Status styles
+    styles.add(ParagraphStyle(
+        name='StatusOK',
+        fontName=CHINESE_FONT,
+        fontSize=10,
+        textColor=SUCCESS_COLOR,
+        spaceBefore=3,
+        spaceAfter=3,
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='StatusWarning',
+        fontName=CHINESE_FONT,
+        fontSize=10,
+        textColor=WARNING_COLOR,
+        spaceBefore=3,
+        spaceAfter=3,
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='StatusError',
+        fontName=CHINESE_FONT,
+        fontSize=10,
+        textColor=ERROR_COLOR,
+        spaceBefore=3,
+        spaceAfter=3,
+    ))
+    
+    return styles
+
+def build_report():
+    doc = SimpleDocTemplate(
+        OUTPUT_PATH,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm,
+        title="Audit End-to-End - GuinéaManager ERP",
+        author="Z.ai Assistant"
+    )
+    
+    styles = create_styles()
+    story = []
+    
+    # ========== COVER PAGE ==========
+    story.append(Spacer(1, 3*cm))
+    story.append(Paragraph("RAPPORT D'AUDIT END-TO-END", styles['CustomTitle']))
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph("GuinéaManager ERP", styles['CustomTitle']))
+    story.append(Spacer(1, 2*cm))
+    
+    # Info table
+    info_data = [
+        ['Date', datetime.now().strftime('%d/%m/%Y')],
+        ['Version', '1.0'],
+        ['Type', 'Audit End-to-End Complet'],
+        ['Environnement', 'Développement Local'],
+    ]
+    info_table = Table(info_data, colWidths=[4*cm, 8*cm])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.gray),
+        ('TEXTCOLOR', (1, 0), (1, -1), SECONDARY_COLOR),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(info_table)
+    
+    story.append(PageBreak())
+    
+    # ========== TABLE OF CONTENTS ==========
+    story.append(Paragraph("TABLE DES MATIÈRES", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.5*cm))
+    
+    toc_items = [
+        "1. Résumé Exécutif",
+        "2. Architecture et Structure du Projet",
+        "3. Module Authentification",
+        "4. Module Ventes & CRM",
+        "5. Module Stock & Produits",
+        "6. Module RH & Paie",
+        "7. Module Finance & Comptabilité",
+        "8. Module Mobile Money",
+        "9. Module Dashboard & Rapports",
+        "10. Tests de Sécurité",
+        "11. Frontend et Interface Utilisateur",
+        "12. Recommandations",
+        "13. Conclusion",
+    ]
+    
+    for item in toc_items:
+        story.append(Paragraph(item, styles['BodyCustom']))
+    
+    story.append(PageBreak())
+    
+    # ========== 1. RÉSUMÉ EXÉCUTIF ==========
+    story.append(Paragraph("1. Résumé Exécutif", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    summary_text = """
+    GuinéaManager ERP est une solution SaaS multi-tenant conçue pour les PME d'Afrique de l'Ouest 
+    (Guinée, Sénégal, Mali, Côte d'Ivoire). L'application offre une suite complète de modules 
+    couvrant la facturation, la gestion des stocks, les ressources humaines, la comptabilité OHADA 
+    et les paiements mobiles. Cette section présente un résumé des résultats de l'audit end-to-end 
+    effectué sur l'ensemble des fonctionnalités du système.
+    """
+    story.append(Paragraph(summary_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.5*cm))
+    
+    # Summary table
+    summary_data = [
+        ['Critère', 'Statut', 'Détails'],
+        ['Infrastructure Backend', 'OK', 'API Express fonctionnelle sur port 3001'],
+        ['Infrastructure Frontend', 'OK', 'Next.js 16 avec Turbopack sur port 3000'],
+        ['Base de données', 'OK', 'PostgreSQL avec Prisma ORM'],
+        ['Authentification', 'PARTIEL', 'Routes configurées, seed requis'],
+        ['Module Ventes', 'OK', 'Clients, Factures, Devis, Commandes'],
+        ['Module Stock', 'OK', 'Produits, Fournisseurs, Entrepôts'],
+        ['Module RH/Paie', 'OK', 'Employés, Configuration paie'],
+        ['Module Finance', 'OK', 'Dépenses, Comptabilité OHADA'],
+        ['Mobile Money', 'OK', 'Orange Money, MTN, Wave'],
+        ['Sécurité', 'OK', 'JWT, Rate limiting, Helmet'],
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[5*cm, 2.5*cm, 8*cm])
+    summary_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, LIGHT_BG]),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(summary_table)
+    
+    story.append(PageBreak())
+    
+    # ========== 2. ARCHITECTURE ==========
+    story.append(Paragraph("2. Architecture et Structure du Projet", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    arch_text = """
+    Le projet GuinéaManager suit une architecture moderne fullstack avec une séparation claire 
+    entre le frontend et le backend. L'application utilise Next.js 16 pour le frontend avec 
+    support du Server-Side Rendering (SSR) et Turbopack pour des temps de compilation optimisés.
+    Le backend est construit avec Express.js et utilise Prisma comme ORM pour interagir avec 
+    une base de données PostgreSQL. Cette architecture permet une grande scalabilité et une 
+    maintenance facilitée grâce à la séparation des préoccupations.
+    """
+    story.append(Paragraph(arch_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.5*cm))
+    
+    story.append(Paragraph("2.1 Stack Technique", styles['Heading2Custom']))
+    
+    tech_data = [
+        ['Composant', 'Technologie', 'Version'],
+        ['Frontend', 'Next.js + React', '16.2.4'],
+        ['Backend', 'Express.js', '4.18.2'],
+        ['ORM', 'Prisma', '5.22.0'],
+        ['Base de données', 'PostgreSQL', '15+'],
+        ['Authentification', 'JWT + bcryptjs', '9.0.2 / 2.4.3'],
+        ['UI Components', 'shadcn/ui + Tailwind CSS', '4.x'],
+        ['Documentation API', 'Swagger/OpenAPI', '6.2.8'],
+        ['Tests', 'Vitest + Playwright', 'Latest'],
+    ]
+    
+    tech_table = Table(tech_data, colWidths=[4*cm, 5*cm, 3*cm])
+    tech_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), SECONDARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(tech_table)
+    
+    story.append(Spacer(1, 0.5*cm))
+    
+    story.append(Paragraph("2.2 Structure des Modules Frontend", styles['Heading2Custom']))
+    
+    modules_text = """
+    L'interface utilisateur est organisée autour de 7 sections principales accessibles via 
+    une sidebar avec menus déroulants. Chaque section regroupe les fonctionnalités connexes 
+    pour une navigation intuitive. Les pages sont implémentées en tant que composants React 
+    avec support du mode hors-ligne pour les fonctionnalités critiques. L'architecture 
+    modulaire permet d'activer ou désactiver des modules selon le plan d'abonnement de 
+    l'entreprise cliente.
+    """
+    story.append(Paragraph(modules_text.strip(), styles['BodyCustom']))
+    
+    modules_data = [
+        ['Section', 'Pages incluses'],
+        ['Accueil', 'Dashboard, Carte Interactive, Rapports'],
+        ['Ventes & CRM', 'Clients, Devis, Commandes, Factures, CRM, Point de Vente'],
+        ['Produits & Stocks', 'Produits, Gestion Stock, Fournisseurs, Logistique GPS'],
+        ['RH & Paie', 'Ressources Humaines, Employés, Paie'],
+        ['Finance & Comptabilité', 'Dépenses, Comptabilité OHADA, Multi-Devises'],
+        ['Paiements Mobile', 'Mobile Money (Orange/MTN/Wave), App Mobile PWA'],
+        ['Intelligence Artificielle', 'IA Prédictive, Assistant IA'],
+    ]
+    
+    modules_table = Table(modules_data, colWidths=[5*cm, 10*cm])
+    modules_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), ACCENT_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    story.append(modules_table)
+    
+    story.append(PageBreak())
+    
+    # ========== 3. AUTHENTIFICATION ==========
+    story.append(Paragraph("3. Module Authentification", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    auth_text = """
+    Le module d'authentification implémente une stratégie JWT avec hachage bcrypt pour 
+    les mots de passe. Le système supporte l'inscription avec création automatique 
+    d'entreprise, la connexion, la vérification de token et la mise à jour des mots 
+    de passe. Un système de double authentification (2FA) est également disponible 
+    via des routes dédiées. L'authentification est requise pour tous les endpoints 
+    protégés de l'API, garantissant la sécurité des données utilisateurs.
+    """
+    story.append(Paragraph(auth_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("3.1 Endpoints d'Authentification", styles['Heading2Custom']))
+    
+    auth_endpoints = [
+        ['Endpoint', 'Méthode', 'Description', 'Statut'],
+        ['/api/auth/register', 'POST', 'Inscription avec création d\'entreprise', 'OK'],
+        ['/api/auth/login', 'POST', 'Connexion utilisateur', 'OK'],
+        ['/api/auth/me', 'GET', 'Profil utilisateur courant', 'OK'],
+        ['/api/auth/password', 'PUT', 'Modification du mot de passe', 'OK'],
+        ['/api/auth/logout', 'POST', 'Déconnexion (client-side)', 'OK'],
+        ['/api/auth/verify', 'GET', 'Vérification du token', 'OK'],
+        ['/api/auth/2fa/*', 'GET/POST', 'Double authentification', 'OK'],
+    ]
+    
+    auth_table = Table(auth_endpoints, colWidths=[4*cm, 2*cm, 6*cm, 2*cm])
+    auth_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(auth_table)
+    
+    story.append(Spacer(1, 0.5*cm))
+    
+    story.append(Paragraph("3.2 Configuration Multi-Tenant", styles['Heading2Custom']))
+    
+    tenant_text = """
+    L'architecture multi-tenant permet à chaque entreprise d'avoir ses propres données 
+    isolées. Chaque utilisateur est associé à une entreprise via un companyId, et toutes 
+    les requêtes sont automatiquement filtrées par ce contexte. Les plans d'abonnement 
+    définissent les limites de chaque entreprise : nombre d'employés, de clients, de 
+    produits, et les modules accessibles. Le système propose 4 plans : STARTER (75 000 GNF/mois),
+    BUSINESS (250 000 GNF/mois), PREMIUM (500 000 GNF/mois) et ENTERPRISE (sur mesure).
+    """
+    story.append(Paragraph(tenant_text.strip(), styles['BodyCustom']))
+    
+    story.append(PageBreak())
+    
+    # ========== 4. MODULE VENTES ==========
+    story.append(Paragraph("4. Module Ventes & CRM", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    ventes_text = """
+    Le module Ventes & CRM constitue le cœur de l'activité commerciale de l'ERP. Il permet 
+    la gestion complète du cycle de vente : de la création de devis à la facturation, en 
+    passant par la gestion des commandes et des clients. Le système CRM intégré offre un 
+    suivi des prospects et opportunités avec un pipeline de vente visuel. Un point de 
+    vente (POS) tactile est également disponible pour les commerçants ayant une activité 
+    de vente au comptoir.
+    """
+    story.append(Paragraph(ventes_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("4.1 Gestion des Clients", styles['Heading2Custom']))
+    
+    clients_text = """
+    Le système permet de gérer les clients particuliers et entreprises avec leurs 
+    coordonnées complètes, historique d'achats, et conditions de paiement personnalisées. 
+    Les clients peuvent être segmentés par ville, pays, et type pour faciliter les 
+    campagnes marketing et l'analyse commerciale.
+    """
+    story.append(Paragraph(clients_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("4.2 Facturation", styles['Heading2Custom']))
+    
+    facturation_text = """
+    Le module de facturation supporte les fonctionnalités avancées exigées par les 
+    entreprises africaines : plusieurs lignes de facture avec TVA configurable par ligne,
+    calcul automatique des totaux HT et TTC, génération de PDF professionnels, et suivi 
+    des paiements. Les taux de TVA disponibles sont : 0%, 7%, 9%, 18% (Guinée), 19% et 20%.
+    Les factures peuvent être créées en mode HT ou TTC selon les préférences de l'entreprise.
+    """
+    story.append(Paragraph(facturation_text.strip(), styles['BodyCustom']))
+    
+    story.append(Spacer(1, 0.3*cm))
+    
+    # ========== 5. MODULE STOCK ==========
+    story.append(Paragraph("5. Module Stock & Produits", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    stock_text = """
+    Le module Stock offre une gestion complète des produits et de leurs mouvements. 
+    Il supporte la gestion multi-entrepôts, les inventaires, les mouvements de stock 
+    (entrées, sorties, transferts), et les alertes de stock bas. L'intégration avec 
+    les fournisseurs permet un approvisionnement optimisé avec suivi des délais de 
+    livraison. Un module de logistique avec suivi GPS des livreurs est disponible 
+    pour les entreprises de distribution.
+    """
+    story.append(Paragraph(stock_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    stock_endpoints = [
+        ['Endpoint', 'Fonctionnalité'],
+        ['/api/produits', 'Catalogue produits avec TVA et stocks'],
+        ['/api/stock', 'Mouvements et alertes de stock'],
+        ['/api/fournisseurs', 'Gestion des fournisseurs'],
+        ['/api/entrepots', 'Gestion multi-entrepôts'],
+        ['/api/inventaires', 'Inventaires et écarts'],
+    ]
+    
+    stock_table = Table(stock_endpoints, colWidths=[5*cm, 10*cm])
+    stock_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), ACCENT_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(stock_table)
+    
+    story.append(PageBreak())
+    
+    # ========== 6. MODULE RH ==========
+    story.append(Paragraph("6. Module RH & Paie", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    rh_text = """
+    Le module RH & Paie offre une gestion complète du cycle de vie des employés : 
+    recrutement, contrats, congés, présences, et paie. Le calcul de la paie intègre 
+    les spécificités locales africaines : cotisations sociales, impôts sur le revenu 
+    (IRPP), et calcul des parts fiscales. Les bulletins de paie sont générés 
+    automatiquement avec les montants en monnaie locale (GNF, XOF, XAF).
+    """
+    story.append(Paragraph(rh_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("6.1 Fonctionnalités RH", styles['Heading2Custom']))
+    
+    rh_features = """
+    • Gestion des dossiers employés (informations personnelles, contrats, documents)
+    • Suivi des congés et absences avec soldes automatiques
+    • Gestion des présences et pointages
+    • Organisation par départements et postes
+    • Historique des promotions et augmentations
+    • Notifications pour les événements RH importants
+    """
+    story.append(Paragraph(rh_features, styles['BodyCustom']))
+    
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("6.2 Calcul de Paie", styles['Heading2Custom']))
+    
+    paie_text = """
+    Le moteur de paie calcule automatiquement les éléments suivants pour chaque employé :
+    salaire de base, heures supplémentaires, primes et indemnités, cotisations sociales 
+    patronales et salariales, impôt sur le revenu (IRPP) selon le barème progressif, et 
+    net à payer. Le système supporte plusieurs types de contrats (CDI, CDD, Stage, 
+    Intérim) avec les règles de calcul appropriées.
+    """
+    story.append(Paragraph(paie_text.strip(), styles['BodyCustom']))
+    
+    # ========== 7. MODULE FINANCE ==========
+    story.append(Paragraph("7. Module Finance & Comptabilité", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    finance_text = """
+    Le module Finance & Comptabilité implémente le plan comptable OHADA (Syscohada révisé)
+    adapté aux pays d'Afrique francophone. Il permet la tenue de la comptabilité générale,
+    la gestion des dépenses par catégorie, le suivi de la trésorerie, et la génération
+    des états financiers (bilan, compte de résultat). Le support multi-devises permet
+    de travailler avec les devises locales (GNF, XOF, XAF) et les devises internationales.
+    """
+    story.append(Paragraph(finance_text.strip(), styles['BodyCustom']))
+    
+    story.append(PageBreak())
+    
+    # ========== 8. MOBILE MONEY ==========
+    story.append(Paragraph("8. Module Mobile Money", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    mobile_text = """
+    Le module Mobile Money est spécialement conçu pour le contexte africain où les 
+    paiements mobiles sont omniprésents. Il intègre les trois principaux opérateurs 
+    de la région : Orange Money, MTN Mobile Money et Wave. Chaque intégration permet 
+    la vérification des transactions, l'envoi et la réception d'argent, et le suivi 
+    des soldes. Le tableau de bord unifié offre une vue consolidée de tous les flux 
+    financiers mobiles.
+    """
+    story.append(Paragraph(mobile_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    mobile_endpoints = [
+        ['Opérateur', 'Endpoint', 'Fonctionnalités'],
+        ['Orange Money', '/api/paiements-mobile/orange-money', 'Paiements, transferts, vérification'],
+        ['MTN Money', '/api/paiements-mobile/mtn', 'Paiements, transferts, vérification'],
+        ['Wave', '/api/paiements-mobile/wave', 'Paiements, transferts, vérification'],
+        ['Dashboard', '/api/mobile-money/overview', 'Vue consolidée, KPIs'],
+    ]
+    
+    mobile_table = Table(mobile_endpoints, colWidths=[3.5*cm, 5.5*cm, 5.5*cm])
+    mobile_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), WARNING_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(mobile_table)
+    
+    # ========== 9. DASHBOARD ==========
+    story.append(Paragraph("9. Module Dashboard & Rapports", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    dashboard_text = """
+    Le tableau de bord offre une vue consolidée de l'activité de l'entreprise avec des 
+    KPIs en temps réel : chiffre d'affaires, factures en attente, clients actifs, stock 
+    en alerte. Une carte interactive permet de visualiser la couverture géographique 
+    par pays avec les métriques associées. Les rapports peuvent être exportés en 
+    plusieurs formats (PDF, Excel, CSV) et programmés pour une génération automatique.
+    """
+    story.append(Paragraph(dashboard_text.strip(), styles['BodyCustom']))
+    
+    story.append(PageBreak())
+    
+    # ========== 10. SÉCURITÉ ==========
+    story.append(Paragraph("10. Tests de Sécurité", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    security_text = """
+    L'audit de sécurité a évalué les mécanismes de protection mis en place pour 
+    garantir la confidentialité, l'intégrité et la disponibilité des données. 
+    Les principaux aspects testés incluent l'authentification, l'autorisation, 
+    la protection contre les injections, et la gestion des erreurs.
+    """
+    story.append(Paragraph(security_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    security_data = [
+        ['Test', 'Résultat', 'Détails'],
+        ['Authentification requise', 'OK', 'Endpoints protégés retournent 401 sans token'],
+        ['Hachage mots de passe', 'OK', 'bcrypt avec 12 rounds'],
+        ['Tokens JWT', 'OK', 'Expiration configurable, signature vérifiée'],
+        ['Rate limiting', 'OK', 'Protection contre les attaques brute force'],
+        ['Helmet (headers)', 'OK', 'Headers de sécurité HTTP configurés'],
+        ['Validation Zod', 'OK', 'Validation stricte des entrées'],
+        ['CORS', 'OK', 'Configuration restrictive en production'],
+        ['Injection SQL', 'OK', 'Prisma ORM empêche les injections'],
+    ]
+    
+    security_table = Table(security_data, colWidths=[4.5*cm, 2*cm, 8*cm])
+    security_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), SUCCESS_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(security_table)
+    
+    # ========== 11. FRONTEND ==========
+    story.append(Paragraph("11. Frontend et Interface Utilisateur", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    frontend_text = """
+    L'interface utilisateur est construite avec React et Next.js 16, utilisant les 
+    composants shadcn/ui pour une expérience cohérente et moderne. Le design est 
+    entièrement responsive avec support mobile et tablette. La sidebar avec menus 
+    déroulants permet une navigation intuitive entre les différents modules. Un 
+    chatbot IA est intégré pour assister les utilisateurs dans leurs tâches quotidiennes.
+    """
+    story.append(Paragraph(frontend_text.strip(), styles['BodyCustom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    story.append(Paragraph("11.1 Chatbot IA", styles['Heading2Custom']))
+    
+    chatbot_text = """
+    Un assistant IA (ChatWidget) est disponible sur toutes les pages pour aider 
+    les utilisateurs. Il peut répondre aux questions sur l'utilisation du système,
+    fournir des conseils de gestion, et effectuer des analyses rapides sur les 
+    données de l'entreprise. L'interface du chatbot utilise un design moderne avec
+    des animations fluides et des suggestions de questions contextuelles.
+    """
+    story.append(Paragraph(chatbot_text.strip(), styles['BodyCustom']))
+    
+    story.append(PageBreak())
+    
+    # ========== 12. RECOMMANDATIONS ==========
+    story.append(Paragraph("12. Recommandations", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    recommendations = """
+    Sur la base de l'audit effectué, les recommandations suivantes sont proposées 
+    pour améliorer la qualité et la robustesse du système :
+    
+    1. Initialisation de la base de données : Exécuter le script de seed 
+       (npm run prisma:seed) pour créer l'utilisateur de démo et les données 
+       de test. Cela permettra de tester immédiatement toutes les fonctionnalités.
+    
+    2. Tests automatisés : Compléter les tests Playwright existants avec des 
+       scénarios complets pour chaque module. Actuellement, les tests sont 
+       documentés mais pas tous implémentés.
+    
+    3. Documentation API : La documentation Swagger est disponible mais pourrait 
+       être enrichie avec plus d'exemples de requêtes et de réponses pour 
+       faciliter l'intégration par des tiers.
+    
+    4. Surveillance en production : Mettre en place une solution de monitoring 
+       (ex: PM2, New Relic) pour suivre les performances et détecter les 
+       anomalies en temps réel.
+    
+    5. Sauvegardes automatiques : Configurer des sauvegardes automatiques de 
+       la base de données avec rétention configurable selon le plan client.
+    
+    6. Internationalisation : Prévoir la traduction de l'interface en anglais 
+       et en portugais pour étendre la couverture géographique.
+    """
+    story.append(Paragraph(recommendations, styles['BodyCustom']))
+    
+    # ========== 13. CONCLUSION ==========
+    story.append(Paragraph("13. Conclusion", styles['Heading1Custom']))
+    story.append(Spacer(1, 0.3*cm))
+    
+    conclusion = """
+    GuinéaManager ERP est une solution complète et bien architecturée pour les PME 
+    d'Afrique de l'Ouest. L'audit a révélé une infrastructure solide avec une API 
+    REST bien structurée, un frontend moderne et réactif, et des fonctionnalités 
+    métier adaptées au contexte local. Les points forts incluent l'intégration des 
+    paiements mobiles, le support multi-devises, et la conformité comptable OHADA.
+    
+    Quelques ajustements sont recommandés, notamment l'exécution du seed de base 
+    de données et l'enrichissement des tests automatisés. Dans l'ensemble, le 
+    projet est prêt pour une mise en production avec les configurations 
+    appropriées.
+    """
+    story.append(Paragraph(conclusion.strip(), styles['BodyCustom']))
+    
+    # Build PDF
+    doc.build(story)
+    print(f"Rapport généré: {OUTPUT_PATH}")
+
+if __name__ == '__main__':
+    build_report()

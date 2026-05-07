@@ -1,0 +1,203 @@
+# GuinéaManager ERP - Docker Compose Production Configuration
+# Complete production deployment with SSL, monitoring, and backups
+
+services:
+  # ==========================================
+  # MAIN APPLICATION (All-in-One)
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: guineamanager-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      # Core
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-guineamanager}:${POSTGRES_PASSWORD:-guineamanager123}@postgres:5432/${POSTGRES_DB:-guineamanager}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - NEXT_PUBLIC_API_URL=/api
+      - BACKEND_URL=http://localhost:3001
+      
+      # Application URL
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://guineamanager.com}
+      
+      # Email notifications
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@guineamanager.com}
+      
+      # Mobile Money APIs
+      - ORANGE_MONEY_CLIENT_ID=${ORANGE_MONEY_CLIENT_ID:-}
+      - ORANGE_MONEY_CLIENT_SECRET=${ORANGE_MONEY_CLIENT_SECRET:-}
+      - ORANGE_MONEY_MERCHANT_CODE=${ORANGE_MONEY_MERCHANT_CODE:-}
+      - MTN_MONEY_SUBSCRIPTION_KEY=${MTN_MONEY_SUBSCRIPTION_KEY:-}
+      - MTN_MONEY_API_KEY=${MTN_MONEY_API_KEY:-}
+      - MTN_MONEY_USER_ID=${MTN_MONEY_USER_ID:-}
+      - WAVE_MONEY_API_KEY=${WAVE_MONEY_API_KEY:-}
+      
+      # Push notifications
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:support@guineamanager.com}
+      
+      # Redis cache
+      - REDIS_URL=redis://redis:6379
+      
+      # SMS Gateway (AfricasTalking)
+      - AFRICASTALKING_API_KEY=${AFRICASTALKING_API_KEY:-}
+      - AFRICASTALKING_SENDER_ID=${AFRICASTALKING_SENDER_ID:-GuineaManager}
+      
+      # Monitoring
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+        
+    networks:
+      - guineamanager-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ==========================================
+  # POSTGRESQL DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: guineamanager-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-guineamanager}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-guineamanager123}
+      - POSTGRES_DB=${POSTGRES_DB:-guineamanager}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - guineamanager-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-guineamanager} -d ${POSTGRES_DB:-guineamanager}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ==========================================
+  # REDIS CACHE
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: guineamanager-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - guineamanager-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ==========================================
+  # CADDY REVERSE PROXY (Auto SSL)
+  # ==========================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: guineamanager-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - guineamanager-network
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ==========================================
+  # BACKUP SERVICE
+  # ==========================================
+  backup:
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    container_name: guineamanager-backup
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB:-guineamanager}
+      - POSTGRES_USER=${POSTGRES_USER:-guineamanager}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-guineamanager123}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=30
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
+    volumes:
+      - backup-data:/backups
+    networks:
+      - guineamanager-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  guineamanager-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    name: guineamanager-postgres-data
+  redis-data:
+    name: guineamanager-redis-data
+  caddy-data:
+    name: guineamanager-caddy-data
+  caddy-config:
+    name: guineamanager-caddy-config
+  backup-data:
+    name: guineamanager-backups
