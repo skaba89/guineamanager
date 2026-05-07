@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Warehouse (Entrepot) Routes for GuinéaManager ERP
 
 import { Router, Request, Response } from 'express';

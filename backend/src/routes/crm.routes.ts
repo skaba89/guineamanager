@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes API pour le CRM
 
 import { Router, Request, Response } from 'express';

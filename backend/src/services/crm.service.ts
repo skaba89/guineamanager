@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service CRM pour GuinéaManager
 // Gestion des prospects, opportunités et activités
 

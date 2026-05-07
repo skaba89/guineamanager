@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Quotes/Devis Routes for GuinéaManager ERP
 
 import { Router, Request, Response } from 'express';

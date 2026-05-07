@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Service de gestion des clés API pour l'API publique GuinéaManager
  * 

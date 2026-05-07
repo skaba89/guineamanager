@@ -16,13 +16,14 @@ export const createProduit = async (
     data: {
       nom: data.nom,
       description: data.description,
-      prixUnitaire: data.prixUnitaire,
-      unite: data.unite,
+      prixUnitaire: data.prixUnitaire ?? 0,
+      unite: data.unite ?? 'Unité',
       stockActuel: data.stockActuel ?? 0,
       stockMin: data.stockMin ?? 0,
       categorie: data.categorie,
       type: data.type ?? 'PRODUIT',
-      tva: data.tva ?? 18,
+      tva: data.tva ?? 0.18,
+      reference: data.reference,
       actif: data.actif ?? true,
       company: {
         connect: { id: companyId },

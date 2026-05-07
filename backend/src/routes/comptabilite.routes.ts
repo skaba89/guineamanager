@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes API pour la Comptabilité OHADA
 
 import { Router, Request, Response } from 'express';

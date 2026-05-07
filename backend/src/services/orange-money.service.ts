@@ -291,7 +291,7 @@ export const verifierStatut = async (transactionId: string) => {
     );
 
     if (response.ok) {
-      const result = await response.json();
+      const result = await response.json() as { status?: string; txid?: string };
       
       const newStatus = result.status === 'SUCCESS' ? 'SUCCESS' : 
                         result.status === 'FAILED' ? 'FAILED' : 
@@ -300,9 +300,9 @@ export const verifierStatut = async (transactionId: string) => {
 
       if (newStatus !== transaction.status) {
         await traiterCallback({
-          status: result.status,
+          status: result.status || transaction.status,
           order_id: transaction.orderId,
-          txid: result.txid,
+          txid: result.txid || '',
         });
       }
 

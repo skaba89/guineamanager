@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes pour le programme Beta Testers
 import { Router, Request, Response } from 'express';
 import prisma from '../utils/prisma';

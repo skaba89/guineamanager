@@ -11,22 +11,28 @@ const createProduitSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
   reference: z.string().optional(),
   description: z.string().optional(),
-  prixAchat: z.number().int().min(0, 'Le prix d\'achat doit être positif'),
-  prixVente: z.number().int().min(0, 'Le prix de vente doit être positif'),
-  stockActuel: z.number().int().min(0).optional(),
-  stockAlerte: z.number().int().min(0).optional(),
-  unite: z.string().optional(),
+  prixUnitaire: z.number().min(0, 'Le prix unitaire doit être positif').default(0),
+  unite: z.string().optional().default('Unité'),
+  stockActuel: z.number().int().min(0).optional().default(0),
+  stockMin: z.number().int().min(0).optional().default(0),
+  stockMax: z.number().int().min(0).optional(),
+  categorie: z.string().optional(),
+  tva: z.number().min(0).max(1).optional().default(0.18),
+  type: z.enum(['PRODUIT', 'SERVICE']).optional().default('PRODUIT'),
 });
 
 const updateProduitSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').optional(),
   reference: z.string().optional(),
   description: z.string().optional(),
-  prixAchat: z.number().int().min(0, 'Le prix d\'achat doit être positif').optional(),
-  prixVente: z.number().int().min(0, 'Le prix de vente doit être positif').optional(),
-  stockActuel: z.number().int().min(0).optional(),
-  stockAlerte: z.number().int().min(0).optional(),
+  prixUnitaire: z.number().min(0, 'Le prix unitaire doit être positif').optional(),
   unite: z.string().optional(),
+  stockActuel: z.number().int().min(0).optional(),
+  stockMin: z.number().int().min(0).optional(),
+  stockMax: z.number().int().min(0).optional(),
+  categorie: z.string().optional(),
+  tva: z.number().min(0).max(1).optional(),
+  type: z.enum(['PRODUIT', 'SERVICE']).optional(),
 });
 
 const updateStockSchema = z.object({

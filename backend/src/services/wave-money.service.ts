@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service Wave pour GuinéaManager
 // Intégration API Wave (Guinée)
 

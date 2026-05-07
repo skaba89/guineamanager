@@ -24,6 +24,6 @@ router.get('/bilan-simplifie', requireAccountant, rapportController.getBilanSimp
 router.get('/impayes', rapportController.getRapportImpayes);
 
 // GET /api/rapports/export - Export des données
-router.get('/export', requireFeature('export'), exportRateLimiter, rapportController.exportDonnees);
+router.get('/export', requireFeature('exports'), exportRateLimiter, rapportController.exportDonnees);
 
 export default router;

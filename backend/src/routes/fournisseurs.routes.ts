@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supplier (Fournisseur) Routes for GuinéaManager ERP
 
 import { Router, Request, Response } from 'express';

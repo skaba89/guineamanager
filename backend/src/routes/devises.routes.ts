@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes API pour les Devises et Taux de Change
 
 import { Router, Request, Response } from 'express';

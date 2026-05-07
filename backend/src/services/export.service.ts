@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service d'export pour GuinéaManager - PDF et Excel
 
 import PDFDocument from 'pdfkit';

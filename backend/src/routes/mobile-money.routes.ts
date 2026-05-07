@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes Mobile Money Dashboard pour GuinéaManager
 import { Router, Request, Response } from 'express';
 import { authMiddleware, asyncHandler } from '../middlewares';

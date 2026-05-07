@@ -9,24 +9,24 @@ import { asyncHandler } from '../middlewares/errorHandler';
 // Schémas de validation
 const createDepenseSchema = z.object({
   categorie: z.enum(['ACHAT', 'LOYER', 'SALAIRES', 'UTILITIES', 'TRANSPORT', 'COMMUNICATION', 'FOURNITURES', 'SERVICES', 'IMPOTS', 'AUTRES']),
-  montant: z.number().int().positive('Le montant doit être positif'),
-  date: z.string().datetime().optional(),
+  montant: z.number().positive('Le montant doit être positif'),
+  date: z.coerce.date().optional(),
   description: z.string().optional(),
   fournisseurId: z.string().optional(),
   justificatifUrl: z.string().url().optional(),
-  modePaiement: z.enum(['CASH', 'ORANGE_MONEY', 'MTN', 'VIREMENT', 'CHEQUE', 'CARTE']).optional(),
+  modePaiement: z.enum(['especes', 'virement', 'cheque', 'mobile_money']).optional(),
   reference: z.string().optional(),
   offlineId: z.string().optional(),
 });
 
 const updateDepenseSchema = z.object({
   categorie: z.enum(['ACHAT', 'LOYER', 'SALAIRES', 'UTILITIES', 'TRANSPORT', 'COMMUNICATION', 'FOURNITURES', 'SERVICES', 'IMPOTS', 'AUTRES']).optional(),
-  montant: z.number().int().positive('Le montant doit être positif').optional(),
-  date: z.string().datetime().optional(),
+  montant: z.number().positive('Le montant doit être positif').optional(),
+  date: z.coerce.date().optional(),
   description: z.string().optional(),
   fournisseurId: z.string().optional().nullable(),
   justificatifUrl: z.string().url().optional(),
-  modePaiement: z.enum(['CASH', 'ORANGE_MONEY', 'MTN', 'VIREMENT', 'CHEQUE', 'CARTE']).optional(),
+  modePaiement: z.enum(['especes', 'virement', 'cheque', 'mobile_money']).optional(),
   reference: z.string().optional(),
 });
 
@@ -34,14 +34,9 @@ const updateDepenseSchema = z.object({
 export const createDepense = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const validated = createDepenseSchema.parse(req.body);
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
 
-    const data = {
-      ...validated,
-      date: validated.date ? new Date(validated.date) : undefined,
-    };
-
-    const depense = await depenseService.createDepense(companyId, userId, data);
+    const depense = await depenseService.createDepense(companyId, validated);
 
     res.status(201).json({
       success: true,
@@ -69,24 +64,17 @@ export const getDepense = asyncHandler(
 export const listDepenses = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const { companyId } = req as AuthenticatedRequest;
-    const { page, limit, sortBy, sortOrder, search, categorie, dateDebut, dateFin } = req.query;
+    const { page, limit, categorie, dateDebut, dateFin } = req.query;
 
-    const pagination: PaginationInput & { 
-      categorie?: string; 
-      dateDebut?: Date; 
-      dateFin?: Date;
-    } = {
+    const params = {
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 20,
-      sortBy: sortBy as string,
-      sortOrder: sortOrder as 'asc' | 'desc',
-      search: search as string,
-      categorie: categorie as string,
+      categorie: categorie as string | undefined,
       dateDebut: dateDebut ? new Date(dateDebut as string) : undefined,
       dateFin: dateFin ? new Date(dateFin as string) : undefined,
     };
 
-    const result = await depenseService.listDepenses(companyId, pagination);
+    const result = await depenseService.listDepenses(companyId, params);
 
     res.json({
       success: true,
@@ -100,15 +88,10 @@ export const listDepenses = asyncHandler(
 export const updateDepense = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const validated = updateDepenseSchema.parse(req.body);
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const data = {
-      ...validated,
-      date: validated.date ? new Date(validated.date) : undefined,
-    };
-
-    const depense = await depenseService.updateDepense(companyId, userId, id, data);
+    const depense = await depenseService.updateDepense(companyId, id, validated);
 
     res.json({
       success: true,
@@ -120,10 +103,10 @@ export const updateDepense = asyncHandler(
 // Supprimer une dépense
 export const deleteDepense = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const result = await depenseService.deleteDepense(companyId, userId, id);
+    const result = await depenseService.deleteDepense(companyId, id);
 
     res.json({
       success: true,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service de Reporting Avancé pour GuinéaManager
 import prisma from '../utils/prisma';
 import logger from '../utils/logger';

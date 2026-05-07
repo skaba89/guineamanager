@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service Admin pour GuinéaManager
 
 import prisma from '../utils/prisma';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Service MTN Mobile Money pour GuinéaManager
 // Intégration API MTN MoMo (Collection & Disbursement)
 

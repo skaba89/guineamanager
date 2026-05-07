@@ -11,17 +11,16 @@ const ligneFactureSchema = z.object({
   produitId: z.string().optional(),
   description: z.string().min(1, 'La description est requise'),
   designation: z.string().optional(), // Alias pour compatibilité
-  quantite: z.number().int().positive('La quantité doit être positive'),
-  prixUnitaire: z.number().int().min(0, 'Le prix unitaire doit être positif'),
-  tauxTVA: z.number().optional().default(18),
+  quantite: z.number().positive('La quantité doit être positive'),
+  prixUnitaire: z.number().min(0, 'Le prix unitaire doit être positif'),
+  tauxTVA: z.number().optional().default(0),
 });
 
 const createFactureSchema = z.object({
   clientId: z.string().min(1, 'Le client est requis'),
-  date: z.string().datetime().optional(),
-  dateEcheance: z.string().datetime().optional(),
-  echeance: z.string().datetime().optional(), // Alias
-  modePaiement: z.string().optional(),
+  dateEmission: z.coerce.date().optional(),
+  dateEcheance: z.coerce.date().optional(),
+  modePaiement: z.enum(['especes', 'virement', 'cheque', 'mobile_money']).optional(),
   notes: z.string().optional(),
   conditions: z.string().optional(),
   lignes: z.array(ligneFactureSchema).min(1, 'Au moins une ligne est requise'),
@@ -30,16 +29,17 @@ const createFactureSchema = z.object({
 
 const updateFactureSchema = z.object({
   clientId: z.string().optional(),
-  date: z.string().datetime().optional(),
-  echeance: z.string().datetime().optional(),
+  dateEmission: z.coerce.date().optional(),
+  dateEcheance: z.coerce.date().optional(),
+  modePaiement: z.enum(['especes', 'virement', 'cheque', 'mobile_money']).optional(),
   notes: z.string().optional(),
-  conditions: z.string().optional(),
+  statut: z.enum(['brouillon', 'envoyee', 'payee', 'annulee']).optional(),
   lignes: z.array(ligneFactureSchema).min(1, 'Au moins une ligne est requise').optional(),
 });
 
 const paiementSchema = z.object({
-  montant: z.number().int().positive('Le montant doit être positif'),
-  mode: z.enum(['CASH', 'ORANGE_MONEY', 'MTN', 'VIREMENT', 'CHEQUE', 'CARTE']),
+  montant: z.number().positive('Le montant doit être positif'),
+  mode: z.string(),
   reference: z.string().optional(),
   referenceMobile: z.string().optional(),
   notes: z.string().optional(),
@@ -50,16 +50,9 @@ const paiementSchema = z.object({
 export const createFacture = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const validated = createFactureSchema.parse(req.body);
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
 
-    // Convertir les dates
-    const data = {
-      ...validated,
-      date: validated.date ? new Date(validated.date) : undefined,
-      echeance: validated.echeance ? new Date(validated.echeance) : undefined,
-    };
-
-    const facture = await factureService.createFacture(companyId, userId, data);
+    const facture = await factureService.createFacture(companyId, validated);
 
     res.status(201).json({
       success: true,
@@ -87,19 +80,18 @@ export const getFacture = asyncHandler(
 export const listFactures = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const { companyId } = req as AuthenticatedRequest;
-    const { page, limit, sortBy, sortOrder, search, statut, clientId } = req.query;
+    const { page, limit, statut, clientId, startDate, endDate } = req.query;
 
-    const pagination: PaginationInput & { statut?: string; clientId?: string } = {
+    const params = {
       page: page ? parseInt(page as string) : 1,
       limit: limit ? parseInt(limit as string) : 20,
-      sortBy: sortBy as string,
-      sortOrder: sortOrder as 'asc' | 'desc',
-      search: search as string,
-      statut: statut as string,
-      clientId: clientId as string,
+      statut: statut as 'brouillon' | 'envoyee' | 'payee' | 'annulee' | undefined,
+      clientId: clientId as string | undefined,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
     };
 
-    const result = await factureService.listFactures(companyId, pagination);
+    const result = await factureService.listFactures(companyId, params);
 
     res.json({
       success: true,
@@ -113,16 +105,10 @@ export const listFactures = asyncHandler(
 export const updateFacture = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const validated = updateFactureSchema.parse(req.body);
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const data = {
-      ...validated,
-      date: validated.date ? new Date(validated.date) : undefined,
-      echeance: validated.echeance ? new Date(validated.echeance) : undefined,
-    };
-
-    const facture = await factureService.updateFacture(companyId, userId, id, data);
+    const facture = await factureService.updateFacture(companyId, id, validated);
 
     res.json({
       success: true,
@@ -134,10 +120,10 @@ export const updateFacture = asyncHandler(
 // Supprimer une facture
 export const deleteFacture = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const { companyId, userId } = req as AuthenticatedRequest;
+    const { companyId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const result = await factureService.deleteFacture(companyId, userId, id);
+    const result = await factureService.deleteFacture(companyId, id);
 
     res.json({
       success: true,
@@ -182,7 +168,11 @@ export const recordPayment = asyncHandler(
     const { companyId, userId } = req as AuthenticatedRequest;
     const { id } = req.params;
 
-    const paiement = await factureService.recordPayment(companyId, userId, id, validated);
+    const paiement = await factureService.recordPayment(companyId, userId, id, {
+      montant: validated.montant,
+      mode: validated.mode,
+      reference: validated.reference,
+    });
 
     res.status(201).json({
       success: true,

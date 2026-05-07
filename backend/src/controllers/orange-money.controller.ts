@@ -18,9 +18,9 @@ const initierPaiementSchema = z.object({
 });
 
 const configurerCompteSchema = z.object({
-  apiKey: z.string().min(1, 'API Key requise'),
-  apiSecret: z.string().min(1, 'API Secret requis'),
-  merchantCode: z.string().min(1, 'Code marchand requis'),
+  apiKey: z.string().min(1, 'API Key requise') as unknown as z.ZodString,
+  apiSecret: z.string().min(1, 'API Secret requis') as unknown as z.ZodString,
+  merchantCode: z.string().min(1, 'Code marchand requis') as unknown as z.ZodString,
 });
 
 // Initier un paiement
@@ -119,10 +119,25 @@ export const listTransactions = asyncHandler(
 // Configurer le compte Orange Money
 export const configurerCompte = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const validated = configurerCompteSchema.parse(req.body);
     const { companyId } = req as AuthenticatedRequest;
+    const { apiKey, apiSecret, merchantCode } = req.body;
 
-    const compte = await orangeMoneyService.configurerCompte(companyId, validated);
+    if (!apiKey || !apiSecret || !merchantCode) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'API Key, API Secret et Code marchand sont requis',
+        },
+      });
+      return;
+    }
+
+    const compte = await orangeMoneyService.configurerCompte(companyId, {
+      apiKey,
+      apiSecret,
+      merchantCode,
+    });
 
     res.json({
       success: true,

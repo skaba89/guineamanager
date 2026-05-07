@@ -91,13 +91,15 @@ export const clientFilterSchema = paginationSchema.extend({
 export const createProduitSchema = z.object({
   nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
   description: z.string().max(500).optional(),
+  reference: z.string().max(100).optional(),
   prixUnitaire: amountSchema,
-  unite: z.string().default('unité'),
+  unite: z.string().default('Unité'),
   stockActuel: z.number().int().nonnegative().default(0),
   stockMin: z.number().int().nonnegative().default(0),
+  stockMax: z.number().int().nonnegative().optional(),
   categorie: z.string().max(100).optional(),
   type: z.enum(['PRODUIT', 'SERVICE']).default('PRODUIT'),
-  tva: z.number().nonnegative().max(100).default(18),
+  tva: z.number().nonnegative().max(1).default(0.18),
   actif: z.boolean().default(true),
 });
 
@@ -156,11 +158,18 @@ export const createEmployeSchema = z.object({
   telephone: phoneSchema,
   adresse: z.string().max(200).optional(),
   dateNaissance: dateSchema.optional(),
+  lieuNaissance: z.string().max(100).optional(),
+  nationalite: z.string().max(100).optional(),
+  situationMatrimoniale: z.enum(['celibataire', 'marie', 'divorce', 'veuf']).optional(),
+  nombreEnfants: z.number().int().min(0).optional(),
   dateEmbauche: dateSchema.optional(),
   poste: z.string().max(100).optional(),
   departement: z.string().max(100).optional(),
   salaireBase: amountSchema,
   typeContrat: z.enum(['cdi', 'cdd', 'stage', 'apprentissage']).default('cdi'),
+  dureeContratMois: z.number().int().min(1).optional(),
+  numeroCNSS: z.string().max(50).optional(),
+  actif: z.boolean().default(true),
 });
 
 export const updateEmployeSchema = createEmployeSchema.partial().extend({

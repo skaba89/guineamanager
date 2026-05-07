@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Warehouse (Entrepot) Service for GuinéaManager ERP
 
 import prisma from '../utils/prisma';

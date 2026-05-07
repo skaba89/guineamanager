@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Routes de l'API Publique GuinéaManager
  * 

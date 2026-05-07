@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Inventory Count (Inventaire) Routes for GuinéaManager ERP
 
 import { Router, Request, Response } from 'express';

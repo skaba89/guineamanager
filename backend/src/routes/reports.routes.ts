@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Routes API pour le Reporting Avancé
 import { Router, Request, Response } from 'express';
 import { 

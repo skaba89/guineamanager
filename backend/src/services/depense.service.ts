@@ -14,8 +14,12 @@ export const createDepense = async (
 ) => {
   const depense = await prisma.depense.create({
     data: {
-      ...data,
+      description: data.description || '',
+      montant: data.montant,
+      categorie: data.categorie,
       date: data.date || new Date(),
+      modePaiement: data.modePaiement || 'especes',
+      notes: data.notes,
       companyId,
     },
   });
@@ -101,9 +105,17 @@ export const updateDepense = async (
     throw new NotFoundError('Dépense non trouvée');
   }
 
+  const updateData: any = {};
+  if (data.description !== undefined) updateData.description = data.description;
+  if (data.montant !== undefined) updateData.montant = data.montant;
+  if (data.categorie !== undefined) updateData.categorie = data.categorie;
+  if (data.date !== undefined) updateData.date = data.date;
+  if (data.modePaiement !== undefined) updateData.modePaiement = data.modePaiement;
+  if (data.notes !== undefined) updateData.notes = data.notes;
+
   const depense = await prisma.depense.update({
     where: { id: depenseId },
-    data,
+    data: updateData,
   });
 
   return depense;
